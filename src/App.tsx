@@ -33,14 +33,9 @@ function App() {
       </div>
 
       {/* Nav */}
-      <nav className="relative z-10 px-8 py-5 lg:px-16" style={{background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)'}}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <nav className="relative z-10 px-8 py-5 lg:px-16" style={{background: '#e5e7eb'}}>
+        <div className="max-w-7xl mx-auto flex items-center">
           <img src="/logo.png" alt="EcoVoltz" className="h-10 object-contain" />
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
-          <span className="hover:text-white transition-colors cursor-default">Technology</span>
-          <span className="hover:text-white transition-colors cursor-default">About</span>
-          <span className="hover:text-white transition-colors cursor-default">Contact</span>
         </div>
       </nav>
 
