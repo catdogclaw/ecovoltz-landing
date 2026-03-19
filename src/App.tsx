@@ -33,8 +33,8 @@ function App() {
       </div>
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 lg:px-16">
-        <div className="flex items-center">
+      <nav className="relative z-10 px-8 py-5 lg:px-16" style={{background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)'}}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <img src="/logo.png" alt="EcoVoltz" className="h-10 object-contain" />
         </div>
         <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
@@ -266,9 +266,7 @@ function App() {
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/5 px-8 py-10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center">
-            <img src="/logo.png" alt="EcoVoltz" className="h-7 object-contain opacity-70" />
-          </div>
+          <img src="/logo.png" alt="EcoVoltz" className="h-6 object-contain opacity-80" />
           <p className="text-gray-600 text-xs">© 2026 EcoVoltz Energy. All rights reserved.</p>
           <div className="flex gap-6 text-xs text-gray-500">
             <span className="hover:text-gray-300 cursor-default transition-colors">Privacy</span>
