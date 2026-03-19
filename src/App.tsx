@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 
 const fadeUp = {
@@ -11,14 +10,6 @@ const stagger = {
 }
 
 function App() {
-  const [email, setEmail] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (email) setSubmitted(true)
-  }
-
   return (
     <div className="min-h-screen bg-[#e5e7eb] text-gray-900 overflow-x-hidden">
 
@@ -72,33 +63,14 @@ function App() {
               ))}
             </motion.div>
 
-            {/* CTA */}
+            {/* CTA — no email */}
             <motion.div variants={fadeUp}>
-              {!submitted ? (
-                <form onSubmit={handleSubmit} className="flex gap-3 flex-wrap">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="px-5 py-3.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#00d4ff] focus:ring-2 focus:ring-[#00d4ff]/20 transition-all flex-1 min-w-[240px] shadow-sm"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#00d4ff] to-[#00ff88] text-gray-900 font-bold hover:opacity-90 transition-opacity shadow-md"
-                  >
-                    Get Early Access
-                  </button>
-                </form>
-              ) : (
-                <div className="flex items-center gap-3 text-[#00cc6a] px-5 py-3 rounded-xl bg-[#00ff88]/10 border border-[#00ff88]/30 font-medium">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  You're on the list. We'll be in touch.
-                </div>
-              )}
+              <a
+                href="#how-it-works"
+                className="inline-block px-8 py-4 rounded-xl bg-gradient-to-r from-[#00d4ff] to-[#00ff88] text-gray-900 font-bold hover:opacity-90 transition-opacity shadow-md text-lg"
+              >
+                See How It Works
+              </a>
             </motion.div>
           </motion.div>
 
@@ -109,14 +81,12 @@ function App() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative flex justify-center lg:justify-end"
           >
-            {/* Glow blobs behind image */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#00d4ff]/10 to-[#00ff88]/10 rounded-3xl blur-3xl scale-75" />
             <img
               src="/ecovoltz_concept3.png"
               alt="EcoVoltz Energy Hero"
               className="relative z-10 w-full max-w-md rounded-2xl shadow-2xl"
             />
-            {/* Floating badge */}
             <div className="absolute -right-4 top-16 z-20 px-4 py-2 rounded-xl bg-white/90 border border-[#00d4ff]/30 shadow-lg backdrop-blur-sm hidden md:block">
               <div className="text-[#00d4ff] text-sm font-bold">13.5 kWh</div>
               <div className="text-gray-500 text-xs">Battery Core</div>
@@ -125,6 +95,203 @@ function App() {
               <div className="text-[#00ff88] text-sm font-bold">∞ Cycles</div>
               <div className="text-gray-500 text-xs">Lifespan</div>
             </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* How It Works — Diagram */}
+      <section id="how-it-works" className="relative z-10 px-8 lg:px-16 py-24 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-100px' }}
+            variants={stagger}
+          >
+            <motion.div variants={fadeUp} className="text-center mb-16">
+              <span className="inline-block px-3 py-1 rounded-full border border-[#00d4ff] text-[#00d4ff] text-xs font-semibold tracking-wider uppercase mb-4">
+                System Overview
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
+                Your Home. <span style={{ color: '#00d4ff' }}>Your Energy.</span>
+              </h2>
+              <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                EcoVoltz sits between your home and every power source — solar, battery, and grid — intelligently routing energy where it's needed, when it's needed.
+              </p>
+            </motion.div>
+
+            {/* Energy flow diagram */}
+            <motion.div variants={fadeUp} className="relative bg-gradient-to-br from-gray-50 to-white rounded-3xl border border-gray-200 p-8 md:p-12 overflow-hidden">
+
+              {/* Animated grid background */}
+              <div className="absolute inset-0 opacity-[0.03]"
+                style={{
+                  backgroundImage: `linear-gradient(#00d4ff 1px, transparent 1px), linear-gradient(90deg, #00d4ff 1px, transparent 1px)`,
+                  backgroundSize: '40px 40px'
+                }}
+              />
+
+              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+
+                {/* Solar */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                  className="flex flex-col items-center text-center"
+                >
+                  <div className="relative w-28 h-28 rounded-2xl bg-amber-50 border-2 border-amber-300 flex items-center justify-center mb-4 shadow-lg">
+                    <svg className="w-14 h-14 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.05-6.95l-1.41 1.41m-9.19 9.19l-1.41 1.41m0-12.02l1.41 1.41m9.19 9.19l1.41 1.41M12 7a5 5 0 100 10 5 5 0 000-10z"/>
+                    </svg>
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-400 text-white text-xs font-bold rounded-full shadow">
+                      +0W
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Solar Panels</h3>
+                  <p className="text-gray-500 text-sm">Harvest free energy from the sun</p>
+                </motion.div>
+
+                {/* Grid */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 }}
+                  className="flex flex-col items-center text-center"
+                >
+                  <div className="relative w-28 h-28 rounded-2xl bg-blue-50 border-2 border-blue-300 flex items-center justify-center mb-4 shadow-lg">
+                    <svg className="w-12 h-12 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18m-9 5h9M6 17H3" />
+                    </svg>
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-400 text-white text-xs font-bold rounded-full shadow">
+                      +900W
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Utility Grid</h3>
+                  <p className="text-gray-500 text-sm">Reliable backup power from your utility</p>
+                </motion.div>
+
+                {/* Battery */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4 }}
+                  className="flex flex-col items-center text-center"
+                >
+                  <div className="relative w-28 h-28 rounded-2xl bg-emerald-50 border-2 border-emerald-400 flex flex-col items-center justify-center mb-4 shadow-lg overflow-hidden">
+                    {/* Battery fill */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-400 to-emerald-300 transition-all duration-1000" style={{ height: '95%' }} />
+                    <div className="relative z-10 mb-1">
+                      <svg className="w-12 h-12 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16v10H4zM6 7V4h4v3M14 7V4h4v3" />
+                      </svg>
+                    </div>
+                    <div className="relative z-10 text-xs font-black text-emerald-800">95%</div>
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full shadow">
+                      Ready
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">EcoVoltz Battery</h3>
+                  <p className="text-gray-500 text-sm">13.5 kWh of stored energy on standby</p>
+                </motion.div>
+              </div>
+
+              {/* Central EcoVoltz unit */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+                className="relative mt-8 flex justify-center"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="flex gap-6 items-end mb-6">
+                    {/* Solar to EcoVoltz */}
+                    <div className="flex flex-col items-center">
+                      <div className="h-12 w-1 bg-gradient-to-b from-amber-400 to-[#00d4ff] rounded-full" />
+                      <svg className="w-4 h-4 text-[#00d4ff] -mt-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg>
+                    </div>
+                    {/* Grid to EcoVoltz */}
+                    <div className="flex flex-col items-center">
+                      <div className="h-12 w-1 bg-gradient-to-b from-blue-400 to-[#00d4ff] rounded-full" />
+                      <svg className="w-4 h-4 text-[#00d4ff] -mt-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg>
+                    </div>
+                    {/* Battery to EcoVoltz */}
+                    <div className="flex flex-col items-center">
+                      <div className="h-12 w-1 bg-gradient-to-b from-emerald-400 to-[#00d4ff] rounded-full" />
+                      <svg className="w-4 h-4 text-[#00d4ff] -mt-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg>
+                    </div>
+                  </div>
+
+                  {/* Main unit */}
+                  <div className="relative w-full max-w-md">
+                    <div className="bg-gradient-to-br from-[#00d4ff] to-[#00ff88] rounded-2xl p-6 shadow-2xl">
+                      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <div className="text-white font-black text-2xl mb-1">EcoVoltz</div>
+                        <div className="text-white/70 text-sm font-medium">Smart Energy Hub</div>
+                        <div className="mt-3 flex justify-center gap-4 text-xs text-white/80">
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            Running
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-amber-400" />
+                            Max Green
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-blue-400" />
+                            Tier 2
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Home output */}
+                    <div className="flex flex-col items-center mt-6">
+                      <svg className="w-4 h-4 text-[#00d4ff] mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 20l-8-8h5v-8h6v8h5z"/></svg>
+                      <div className="h-8 w-1 bg-gradient-to-b from-[#00d4ff] to-gray-400 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Home */}
+                  <div className="mt-6 flex flex-col items-center">
+                    <div className="w-24 h-16 bg-gray-200 border-2 border-gray-300 rounded-xl flex items-center justify-center shadow-inner">
+                      <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
+                      </svg>
+                    </div>
+                    <div className="mt-2 text-center">
+                      <div className="text-gray-900 font-bold text-sm">Your Home</div>
+                      <div className="text-gray-500 text-xs">6 Rooms Connected</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Readout badges */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.7 }}
+                className="mt-8 flex justify-center gap-4 flex-wrap"
+              >
+                {[
+                  { label: 'Solar In', value: '0W', color: 'amber' },
+                  { label: 'Grid Draw', value: '900W', color: 'blue' },
+                  { label: 'Battery', value: '95% Full', color: 'emerald' },
+                  { label: 'Home Load', value: '900W', color: 'gray' },
+                ].map((badge) => (
+                  <div key={badge.label} className={`px-4 py-2 rounded-xl bg-${badge.color}-50 border border-${badge.color}-200 text-sm`}>
+                    <span className="text-gray-500 font-medium">{badge.label}: </span>
+                    <span className={`font-bold text-${badge.color}-600`}>{badge.value}</span>
+                  </div>
+                ))}
+              </motion.div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -191,39 +358,7 @@ function App() {
         </div>
       </section>
 
-      {/* Comparison bar */}
-      <section className="relative z-10 px-8 lg:px-16 py-16">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="p-10 rounded-3xl bg-white border border-gray-200 shadow-sm text-center"
-          >
-            <h2 className="text-2xl md:text-3xl font-black mb-4 text-gray-900">
-              Why EcoVoltz over <span className="text-gray-400 line-through">Tesla Powerwall</span>?
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              We're not trying to beat Tesla on branding. We're building energy independence that's accessible, installable in hours — not days — and priced for the homeowner, not the tech investor.
-            </p>
-            <div className="mt-8 flex justify-center gap-12 flex-wrap text-sm">
-              {[
-                { label: 'Faster Install', voltz: '< 4 hrs', tesla: '1-3 days' },
-                { label: 'Modular', voltz: 'Yes', tesla: 'Limited' },
-                { label: 'Price', voltz: 'Transparent', tesla: '$15K+' },
-              ].map((row) => (
-                <div key={row.label} className="text-center">
-                  <div className="text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">{row.label}</div>
-                  <div className="text-[#00cc6a] font-bold text-base">{row.voltz}</div>
-                  <div className="text-gray-400 text-xs mt-1">{row.tesla}</div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Bottom CTA */}
+      {/* Bottom CTA — no email */}
       <section className="relative z-10 px-8 lg:px-16 py-24">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div
@@ -237,28 +372,14 @@ function App() {
               <span style={{ color: '#00d4ff' }}>Your energy isn't.</span>
             </h2>
             <p className="text-gray-600 text-lg mb-10">
-              Join the waitlist and be first to know when EcoVoltz launches in your area.
+              EcoVoltz installs in under 4 hours. Get started with your free home energy assessment.
             </p>
-            {!submitted ? (
-              <form onSubmit={handleSubmit} className="flex gap-3 justify-center flex-wrap">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="px-5 py-3.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#00d4ff] focus:ring-2 focus:ring-[#00d4ff]/20 transition-all w-64 shadow-sm"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#00d4ff] to-[#00ff88] text-gray-900 font-bold hover:opacity-90 transition-opacity shadow-md"
-                >
-                  Join Waitlist
-                </button>
-              </form>
-            ) : (
-              <p className="text-[#00cc6a] font-semibold">✓ You're on the list. We'll notify you at <span className="text-gray-900">{email}</span></p>
-            )}
+            <a
+              href="#how-it-works"
+              className="inline-block px-10 py-4 rounded-xl bg-gradient-to-r from-[#00d4ff] to-[#00ff88] text-gray-900 font-bold hover:opacity-90 transition-opacity shadow-md text-lg"
+            >
+              Learn More
+            </a>
           </motion.div>
         </div>
       </section>
