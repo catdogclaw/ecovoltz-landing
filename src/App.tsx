@@ -27,9 +27,8 @@ function App() {
     <div className="min-h-screen bg-voltz-dark text-white overflow-x-hidden">
       {/* Ambient background */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-voltz-accent/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-voltz-green/5 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#0a0a0f_70%)]" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-voltz-accent/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-voltz-green/10 rounded-full blur-3xl" />
       </div>
 
       {/* Nav */}
