@@ -34,11 +34,8 @@ function App() {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-8 py-6 lg:px-16">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-voltz-accent to-voltz-green flex items-center justify-center">
-            <span className="text-black font-bold text-sm">EV</span>
-          </div>
-          <span className="font-bold text-xl tracking-tight">EcoVoltz</span>
+        <div className="flex items-center">
+          <img src="/logo.png" alt="EcoVoltz" className="h-10 object-contain" />
         </div>
         <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
           <span className="hover:text-white transition-colors cursor-default">Technology</span>
@@ -269,11 +266,8 @@ function App() {
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/5 px-8 py-10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-voltz-accent to-voltz-green flex items-center justify-center">
-              <span className="text-black font-bold text-xs">EV</span>
-            </div>
-            <span className="font-bold text-sm">EcoVoltz</span>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="EcoVoltz" className="h-7 object-contain opacity-70" />
           </div>
           <p className="text-gray-600 text-xs">© 2026 EcoVoltz Energy. All rights reserved.</p>
           <div className="flex gap-6 text-xs text-gray-500">
