@@ -30,11 +30,19 @@ When files appear in `~/Desktop/Incoming_Projects/`:
 
 ### Step 1 — Intake & File Audit
 
-Scan all files in `001_*_input/`. For each file, record:
-- File name and type
-- Brief description of what it contains (spec, drawing, bid, proposal, etc.)
-- Page count (if PDF) or row count (if spreadsheet)
-- Any initial observations about scope or notable items
+Two-phase approach: fast scan first, then detailed review.
+
+**Phase 1A — Quick Text Scan (all files):**
+- Scan every file with PyMuPDF (PDF) or openpyxl (spreadsheet)
+- Record: filename, type, page/sheet count, size
+- Identify file types: architectural drawing, spec, proposal, bid spreadsheet, scope doc, etc.
+- Note any suites or LF references visible in raw text
+
+**Phase 1B — Detailed Review (key files):**
+- For the main drawing PDF: scan all pages for cabinet marker keywords and suite labels
+- Identify which pages contain elevation drawings (A401/A402/etc.)
+- Identify which pages contain floor plans, sections, and details
+- Flag any unusual items or concerns
 
 Save findings to `scratch/file_audit.md`.
 
@@ -49,14 +57,18 @@ Save findings to `scratch/file_audit.md`.
 
 ### Step 2 — Scope Extraction
 
-Read the scope documentation (specs, proposals, SOW, scope letters). Extract:
-- Project name and customer
-- Suites / areas included
-- Authorized linear footage (LF) per suite
+**⚠️ IMPORTANT: Scope comes from customer-supplied documents only.** Do NOT use the millwork company's proposal, bid, or takeoffs as the source of scope. Those are what you're verifying against.
+
+Read customer-supplied scope documents (specs, SOW, RFIs, scope letters). Extract:
+- Project name, customer, location
+- Suites / areas explicitly in scope
+- Authorized linear footage (LF) per suite — only what is stated in customer docs
 - Cabinet types specified (base, wall, tall, floating shelf, etc.)
 - Special items (solid surface, DieWall, fillers, etc.)
 - Exclusions or items noted as "by others"
-- Any budget or pricing notes
+- Drawing sheet references (A401, A102, etc.)
+
+**If LF is not stated in customer docs:** Note this — LF must be calculated from drawings in Step 4.
 
 Save to `scope_summary.md` in `002_*_analysis/`.
 
@@ -71,11 +83,28 @@ Save to `scope_summary.md` in `002_*_analysis/`.
 
 ### Step 3 — Drawing Reduction
 
-Large drawing sets often contain structural, electrical, HVAC, and other non-millwork pages. Identify and extract only the millwork-relevant pages:
+Large drawing sets often contain structural, electrical, HVAC, and other non-millwork pages. Reduce to millwork-relevant pages to minimize token load.
 
-1. Scan PDF for A401, A102, millwork-related sheet numbers
-2. Note which pages contain elevation drawings (where cabinet markers appear)
-3. Extract those pages to a working PDF: `drawings_extracted.pdf`
+**Two approaches — use both:**
+
+**Phase 3A — Text-Based Filtering (fast):**
+1. Scan all pages with PyMuPDF
+2. Score each page by presence of: cabinet markers (PL1, PL2, SS1, SS2), suite labels, A401/A102/A604-A607 sheet references
+3. Flag pages with elevation drawings and floor plans showing casework
+
+**Phase 3B — Vision Verification (recommended for critical suites):**
+1. Render key candidate pages as JPEG images (~1.5x zoom)
+2. Use vision to confirm the page is a millwork elevation (not a structural plan, detail, or legend page)
+3. This catches false positives — pages that mention cabinet markers in a legend or schedule but aren't actually elevation drawings
+
+Extract confirmed millwork pages to `drawings_extracted.pdf`:
+
+```bash
+python3 scripts/extract_pages.py \
+  --input "path/to/source_drawing.pdf" \
+  --output "path/to/analysis/drawings_extracted.pdf" \
+  --pages "1,5,6,25,26,27,28,45,46,56"
+```
 
 Save extracted page list to `scratch/drawing_pages_extracted.md`.
 
@@ -90,29 +119,60 @@ Save extracted page list to `scratch/drawing_pages_extracted.md`.
 
 ### Step 4 — Drawing Capture (Per Suite)
 
-For each suite identified in the scope:
+Two-phase analysis for maximum accuracy. Do NOT rely on text-based marker counting alone — it miscounts cabinets by conflating schedule entries, legends, and material codes with actual cabinet instances.
 
-1. Read the elevation drawings for that suite
-2. Identify and count all cabinet markers:
-   - `P1` = base cabinet (standard)
-   - `PL1/PL2` = plastic laminate cabinet type
-   - `SS1/SS2` = solid surface
-   - `ST3` = small wall cabinet
-   - `B1, B2, etc.` = base cabinet VARIANTS
-   - `F1–F6` = filler/panel pieces
-3. Record dimensions for each cabinet type (X, Y, Z)
-4. Note special features: toe kicks, scribe panels, DieWall, brackets
-5. Compare marker count to stated LF — flag discrepancies
+**Phase 4A — Quick Text Scan (per page):**
+1. Extract text from each elevation drawing page
+2. Use regex to find cabinet marker occurrences: `\b(PL1|PL2|SS1|SS2|F6)\b`
+3. Get rough counts — useful for comparing pages but NOT for accurate cabinet counts
+4. This phase is fast and gives a sense of which pages are busiest
+
+**Phase 4B — Vision Deep Analysis (required for accuracy):**
+1. Render each elevation page as a JPEG image (~1.5x zoom, save to `scratch/`)
+2. Use vision to analyze the page with this prompt:
+
+```
+This is sheet [A401] interior elevations for Suite [XXXX]. Analyze carefully:
+
+1. List ALL cabinet/material markers visible (PL1, PL2, SS1, SS2, B1, B2, F1-F6, EQ, T/R/C, etc.)
+2. Width dimensions for each cabinet section shown
+3. NEW (N) vs EXISTING (E) labels
+4. Trash cabinets (T/R/C), coat rods, solid surface counters, floating shelves
+5. Count DISTINCT cabinet sections by type (not total marker occurrences)
+6. Base cabinet heights labeled
+7. Any cabinet schedule on this sheet? What does it list?
+```
+
+**⚠️ CRITICAL MARKER INTERPRETATION — Do not assume these are cabinet types:**
+
+| Marker | What It Actually Is |
+|--------|-------------------|
+| `P1` | Paint finish on wall panels — NOT a cabinet type |
+| `ST3` | Stone/tile backsplash material — NOT a small wall cabinet |
+| `B1`, `B2` | Rubber base material (Johnsonite) — NOT a base cabinet variant |
+| `EQ1–EQ9` | "Equal" spacing designation — NOT a cabinet type |
+| `T`, `R`, `C` | Trash/Recycle/Compost — features WITHIN base cabinets, not separate cabinets |
+| `F1–F6` | Filler/panel pieces — actual cabinet fragments but often missed in takeoff |
+
+**What to actually count (from vision):**
+- PL1 = Plastic laminate cabinet finish
+- PL2 = Plastic laminate type 2 (different color/pull)
+- SS1/SS2 = Solid surface countertop material
+- F6 = Floating shelf marker (where used)
+- Distinct cabinet SECTION counts (base runs, upper runs, islands)
+
+**For each suite, record:**
+- Suite name and floor
+- Cabinet sections by type (base runs, upper runs, islands)
+- Width of each distinct section (from dimensions on drawing)
+- Special items: trash pull-outs, coat rods, solid surface, floating shelves
+- Base height: 34" MAX standard
+- Total calculated LF: sum of cabinet face widths
+- Comparison to stated LF from Step 2 scope
 
 Save per-suite findings to `scratch/findings_[suite].md`.
 
-**Drawing marker dimensions reference:**
-- Base cabinet height: 34" (to top of base)
-- Standard countertop height: 36" AFF
-- Wall cabinet height: 30–38" AFF depending on counter height
-- Floating shelf depth: 12"
-- Counter depth: 25"
-- Mislabeled shelf indicator: floating shelf with X > 90" AND Y > 20" → likely PL Top / Countertop
+**Context check:** Vision analysis uses significant tokens. Check context after each 2–3 suites. Compact if >60% full.
 
 **⏸️ Gate per suite:**
 - **[C] Continue** → Check context → Move to next suite (or Step 5 if last)
@@ -160,13 +220,15 @@ python3 scripts/completeness_check.py \
 **This step checks for:**
 1. **Mislabeled items** — floating shelf X > 90" AND Y > 20" → almost certainly a PL Top / Countertop mislabeled
 2. **Missing cabinets** — cabinets in drawing with no corresponding INNERGY line item
-3. **B1 base variants** — drawing shows B1/B2 markers but no corresponding variant line items in INNERGY
-4. **F1–F6 filler/panels** — drawing shows F-markers but no corresponding INNERGY items
+3. **Missing F1–F6 filler/panel pieces** — drawing shows F-markers but no corresponding INNERGY items
+4. **Missing tall cabinets** — scope authorizes 90" tall cabinets but drawings may not show them clearly
 5. **Extra items** — INNERGY has line items with no drawing evidence
-6. **Tall cabinets** — scope authorizes 90" tall cabinets but drawings may not show them clearly
+6. **Dimension discrepancies** — drawing dimensions vs. INNERGY dimensions differ
 7. **Scope LF** — stated LF vs. sum of cabinet face widths
 
-**⚠️ CRITICAL:** B1 variants and F1–F6 filler/panel markers are FREQUENTLY excluded from INNERGY takeoffs — even when the operation codes exist in the Pricing Engine. Always verify these specifically.
+**⚠️ CRITICAL:** F1–F6 filler/panel pieces are FREQUENTLY excluded from INNERGY takeoffs. Also verify DieWall panels and other non-standard casework pieces.
+
+**Note on markers:** The completeness_check script scans for marker strings in PDF text. Results are approximate — use vision analysis (Step 4) for accurate counts. The marker string "B1" in drawings refers to rubber base material, NOT a cabinet variant.
 
 Save to `completeness_report.md`.
 
@@ -263,7 +325,7 @@ python3 scripts/completeness_check.py \
   --innergy path/to/innergy_qc.xlsx \
   --output path/to/completeness_report.md
 ```
-**Drawing markers detected:** P1, PL1, PL2, SS1, SS2, ST3, B1, B2, F1–F6
+**Drawing markers detected (text scan):** PL1, PL2, SS1, SS2, F1–F6 (plus P1, ST3, B1, B2 which appear in drawings but are materials not cabinets — verify with vision before counting)
 Requirements: PyMuPDF (fitz), openpyxl
 
 ### scripts/populate_qc_xlsx.py
@@ -293,7 +355,6 @@ Requirements: PyMuPDF (fitz)
 | Mislabeled floating shelf X>90 Y>20 | Countertop miscategorized | Reclassify as PL Top |
 | Scope LF >> actual cabinet widths | Budgeted vs drawn footage | Note variance in bid |
 | Missing tall cabs in drawing | Tall cabs in spec but not shown in elevation | Confirm with InnerGy team |
-| B1 base variants in drawing but no B1 line items in INNERGY | B1 variants missed in takeoff — operation codes exist but not used | Flag for review; these may need separate line items |
 | F1-F6 filler/panels in drawing but no corresponding INNERGY items | Fillers/panels often excluded from takeoff | Flag for review; verify scope includes casework panels |
 
 ---
@@ -334,10 +395,13 @@ Requirements: PyMuPDF (fitz)
 
 ## Tips
 
+- **Always use vision for cabinet counting:** Text-based regex counting is fast but inaccurate. It counts every occurrence of a marker string — including schedule entries, legends, and material callouts that aren't actual cabinets. Use vision to get accurate counts.
 - **Counter depth vs shelf depth:** Floating shelves are typically 12" deep. Countertops are typically 25" deep. If INNERGY shows Y=25" for a floating shelf, it's likely mislabeled.
 - **Base cabinet height:** Standard is 34" to top of base. INNERGY often uses 32.52" (34" minus 1.48"). Flag as systematic discrepancy if present across all base cabinets.
 - **Wall cabinet height:** Look at the elevation drawing's finished floor line and counter height callout.
 - **DieWall items:** Usually floor-to-ceiling panels. Verify height from drawings before flagging as discrepancy.
-- **B1 base variants:** If you see B1, B2 markers in the drawing, DO NOT assume they're covered by standard P1 items. Check INNERGY line items specifically for B1 variant pricing.
-- **F1-F6 filler/panel markers:** Easy to miss. If drawing shows F-markers and INNERGY has no panel/filler items, flag it.
-- **Operation codes exist ≠ included in bid:** The Pricing Engine may have the right code but it wasn't used in the takeoff. Always verify against drawing marker count.
+- **ST3 = backsplash tile, NOT a wall cabinet.** B1/B2 = rubber base material, NOT cabinet variants. P1 = paint finish, NOT a cabinet. Always verify what a marker actually means before counting it.
+- **T/R/C are features within cabinets:** Trash, Recycle, Compost designations appear inside base cabinet runs — they are not separate cabinet types.
+- **F1-F6 filler/panel markers:** These ARE cabinet fragments and ARE frequently missed in INNERGY takeoffs. Count them carefully with vision.
+- **Scope from customer docs only:** Never use the millwork company's proposal or bid as the scope source. Their bid is the output you're verifying against.
+- **Two-phase drawing reduction (Step 3):** Text filter first to narrow candidates, vision to confirm each page is actually a millwork elevation before extracting.
