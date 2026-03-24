@@ -288,9 +288,19 @@ Generate the final QC deliverables:
   - ⚠️ NEEDS REVIEW — could not verify, needs field confirmation
   - ❌ MISSING — in drawing but not in INNERGY
 
+**Always run clean_qc_xlsx.py after populate_qc_xlsx.py** — this removes all empty columns to produce a clean side-by-side:
+
 ```bash
-python3 scripts/populate_qc_xlsx.py
+python3 scripts/populate_qc_xlsx.py \
+  --xlsx path/to/innergy_qc.xlsx \
+  --output path/to/innergy_qc_comparison_raw.xlsx
+
+python3 scripts/clean_qc_xlsx.py \
+  --xlsx path/to/innergy_qc_comparison_raw.xlsx \
+  --output path/to/innergy_qc_comparison.xlsx
 ```
+
+Final columns: Line #, Name, Location, Origin, X, Y, Z, Qty, OpenClaw Z, Z Var (red=mislabeled, green=correct), Status, Notes
 
 **B. Layered Annotated PDF** (per discrepancy type)
 
@@ -421,10 +431,11 @@ Requirements: PyMuPDF (fitz)
       scope_of_work.pdf
       [other customer supplied files]
     002_project_name_analysis/
-      innergy_qc.xlsx                        # Extracted INNERGY line items
-      completeness_report.md                 # Completeness check output
-      scope_summary.md                       # Scope extraction output
-      millwork_company_review.md              # Millwork company comparison (if applicable)
+      innergy_qc.xlsx                          # Extracted INNERGY line items
+      innergy_qc_comparison.xlsx                # Side-by-side comparison (color-coded, empty cols removed)
+      completeness_report.md                     # Completeness check output
+      scope_summary.md                           # Scope extraction output
+      millwork_company_review.md                  # Millwork company comparison (if applicable)
       DISCREPANCY_REVIEW_[ProjectName]_[issue].pdf  # Layered annotated PDFs per discrepancy
       ESTIMATE_REVIEW_[ProjectName]_[date].md       # Executive summary — for estimator review
   scratch/
