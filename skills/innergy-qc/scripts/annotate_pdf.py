@@ -14,7 +14,8 @@ RED    = (0.90, 0.10, 0.10)
 GREEN  = (0.13, 0.55, 0.13)
 ORANGE = (0.85, 0.45, 0.00)
 HEADER_H = 36
-FONT_ANN = 48  # 3x original size (16 × 3)
+FONT_TITLE = 32  # bold title
+FONT_BODY = 24  # body text
 
 
 def make_ocg(doc, name):
@@ -32,8 +33,11 @@ def add_rect(page, rect, stroke=BLUE, fill=None, width=2, dashes=None, ocg=None)
     a.update()
 
 
-def add_freetext(page, rect, text, fontsize, text_color, fill_color,
-                  fontname="helv", align=0, ocg=None):
+def add_freetext(page, rect, text, fontsize, text_color, fill_color=None,
+                  fontname="helv", align=0, ocg=None, bold=False):
+    # Use bold font if requested
+    if bold and fontname == "helv":
+        fontname = "hebo"  # Helvetica Bold
     a = page.add_freetext_annot(rect, text, fontsize=fontsize,
                                 text_color=text_color, fill_color=fill_color,
                                 fontname=fontname, align=align)
@@ -44,10 +48,10 @@ def add_freetext(page, rect, text, fontsize, text_color, fill_color,
 
 def add_header(page, box, title, ocg):
     hdr_rect = fitz.Rect(box.x0, box.y0, box.x1, box.y0 + HEADER_H)
-    # No background box — just transparent text on the drawing
+    # No background box — transparent text on drawing
     add_freetext(page,
                  hdr_rect,
-                 title, FONT_ANN, BLUE, None, align=1, ocg=ocg)
+                 title, FONT_TITLE, BLUE, None, align=1, ocg=ocg, bold=True)
 
 
 def add_body_box(page, box, lines, header_h=HEADER_H, ocg=None):
@@ -58,7 +62,7 @@ def add_body_box(page, box, lines, header_h=HEADER_H, ocg=None):
         box.x1 - 12, box.y1 - 8
     )
     add_freetext(page, body_text_rect, "\n".join(lines),
-                 FONT_ANN - 2, BLUE, None, ocg=ocg)
+                 FONT_BODY, BLUE, None, ocg=ocg)
 
 
 def add_lasso(page, rect, pad=20, ocg=None):
@@ -81,7 +85,7 @@ def add_lasso(page, rect, pad=20, ocg=None):
         la.update()
     label_rect = fitz.Rect(lr.x0, lr.y1 + 6, lr.x0 + 320, lr.y1 + 44)
     add_freetext(page, label_rect, "DISCREPANCY AREA",
-                 FONT_ANN, RED, WHITE, ocg=ocg)
+                 16, RED, None, ocg=ocg)  # lasso label: 16pt
 
 
 def create_annotated_page(doc, src_doc, src_page_idx, page_label,
