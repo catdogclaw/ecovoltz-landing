@@ -280,19 +280,50 @@ python3 scripts/populate_qc_xlsx.py
 
 **B. Layered Annotated PDF** (per discrepancy type)
 
+⚠️ **REQUIRED: Every discrepancy PDF must use the annotate_pdf.py script with real lasso coordinates.**
+
+1. Identify the exact pixel coordinates of the discrepancy on the drawing page:
+   - Use `identify_coords.py` (see below) or a PDF viewer to get coordinates
+   - Lasso marks the exact area on the drawing; Comments box holds the annotation text
+2. Run the script for each discrepancy:
+
 ```bash
 python3 scripts/annotate_pdf.py \
   --input "path/to/drawings_extracted.pdf" \
   --output "path/to/analysis/DISCREPANCY_REVIEW_[project_name]_[issue].pdf" \
-  --pages 1 \
-  --discrepancy "Description of issue" \
+  --pages "0,1,2" \
+  --title "Description of discrepancy" \
+  --discrepancy "Line 1 of finding|Line 2|Action required" \
   --lasso "x1,y1,x2,y2"
 ```
 
+**Arguments:**
+- `--pages`: Comma-separated 0-indexed page numbers (0 = first page)
+- `--title`: Brief title for the comment box header
+- `--discrepancy`: Description text (separate lines with `|`)
+- `--lasso`: REQUIRED — bounding box of the discrepancy area in points (from page origin, top-left = 0,0)
+
+**To find coordinates:** Open the extracted PDF in FoxIt/Adobe, hover over the discrepancy area, note the X,Y position from the status bar.
+
+**Example:**
+```bash
+python3 scripts/annotate_pdf.py \
+  --input "002_analysis/drawings_extracted.pdf" \
+  --output "002_analysis/DISCREPANCY_REVIEW_595_Market_floating_shelf_mislabel.pdf" \
+  --pages "2" \
+  --title "Floating Shelf Mislabel" \
+  --discrepancy "18 items labeled Floating Shelf PL have Z=25 (countertop depth)|Standard floating shelf depth = Z=12|Reclassify as PL Top or Solid Surface" \
+  --lasso "100,100,700,500"
+```
+
+**Output:** One PDF per discrepancy, with OCG toggle layers.
+- **Lasso layer** (red dashed box): marks the discrepancy area on the drawing
+- **Comments layer** (blue box): contains the annotation text
+
+Open in FoxIt PDF Reader → press F5 → toggle layers on/off.
+
 Naming: `DISCREPANCY_REVIEW_[ProjectName]_[issue].pdf`
 Example: `DISCREPANCY_REVIEW_595_Market_Street_floating_shelf_mislabel.pdf`
-
-OCG layers can be toggled in FoxIt PDF Reader (F5 → Layers tab).
 
 **C. Executive Summary**
 - High-level overview: total line items, confirmed count, discrepancy count, missing count
