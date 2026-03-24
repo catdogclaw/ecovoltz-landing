@@ -14,7 +14,7 @@ RED    = (0.90, 0.10, 0.10)
 GREEN  = (0.13, 0.55, 0.13)
 ORANGE = (0.85, 0.45, 0.00)
 HEADER_H = 36
-FONT_ANN = 16
+FONT_ANN = 48  # 3x original size (16 × 3)
 
 
 def make_ocg(doc, name):
@@ -44,21 +44,21 @@ def add_freetext(page, rect, text, fontsize, text_color, fill_color,
 
 def add_header(page, box, title, ocg):
     hdr_rect = fitz.Rect(box.x0, box.y0, box.x1, box.y0 + HEADER_H)
-    add_rect(page, hdr_rect, stroke=BLUE, fill=BLUE, width=0, ocg=ocg)
+    # No background box — just transparent text on the drawing
     add_freetext(page,
-                 fitz.Rect(box.x0 + 10, box.y0 + 6, box.x1 - 10, box.y0 + HEADER_H),
-                 title, FONT_ANN, WHITE, WHITE, align=1, ocg=ocg)
+                 hdr_rect,
+                 title, FONT_ANN, BLUE, None, align=1, ocg=ocg)
 
 
 def add_body_box(page, box, lines, header_h=HEADER_H, ocg=None):
     body_rect = fitz.Rect(box.x0, box.y0 + header_h, box.x1, box.y1)
-    add_rect(page, body_rect, stroke=BLUE, fill=WHITE, width=2, ocg=ocg)
+    # No background rectangle — text floats transparently
     body_text_rect = fitz.Rect(
         box.x0 + 12, box.y0 + header_h + 8,
         box.x1 - 12, box.y1 - 8
     )
     add_freetext(page, body_text_rect, "\n".join(lines),
-                 FONT_ANN - 2, BLUE, WHITE, ocg=ocg)
+                 FONT_ANN - 2, BLUE, None, ocg=ocg)
 
 
 def add_lasso(page, rect, pad=20, ocg=None):
