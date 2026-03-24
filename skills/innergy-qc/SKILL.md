@@ -283,11 +283,14 @@ python3 scripts/populate_qc_xlsx.py
 ```bash
 python3 scripts/annotate_pdf.py \
   --input "path/to/drawings_extracted.pdf" \
-  --output "path/to/analysis/annotated_[issue].pdf" \
+  --output "path/to/analysis/DISCREPANCY_REVIEW_[project_name]_[issue].pdf" \
   --pages 1 \
   --discrepancy "Description of issue" \
   --lasso "x1,y1,x2,y2"
 ```
+
+Naming: `DISCREPANCY_REVIEW_[ProjectName]_[issue].pdf`
+Example: `DISCREPANCY_REVIEW_595_Market_Street_floating_shelf_mislabel.pdf`
 
 OCG layers can be toggled in FoxIt PDF Reader (F5 → Layers tab).
 
@@ -296,6 +299,9 @@ OCG layers can be toggled in FoxIt PDF Reader (F5 → Layers tab).
 - Critical items requiring immediate action
 - Items flagged for review
 - Recommended next steps
+
+Output: `ESTIMATE_REVIEW_[ProjectName]_[date].md`
+Example: `ESTIMATE_REVIEW_595_Market_Street_2026-03-24.md`
 
 **Context check:** Always compact before final output generation if >50% full.
 
@@ -370,12 +376,12 @@ Requirements: PyMuPDF (fitz)
       scope_of_work.pdf
       [other customer supplied files]
     002_project_name_analysis/
-      innergy_qc.xlsx              # Extracted INNERGY line items
-      completeness_report.md       # Completeness check output
-      scope_summary.md             # Scope extraction output
-      millwork_company_review.md   # Millwork company comparison (if applicable)
-      annotated_[issue].pdf        # Layered annotated PDFs per discrepancy
-      qc_report_[date].md          # Executive summary
+      innergy_qc.xlsx                        # Extracted INNERGY line items
+      completeness_report.md                 # Completeness check output
+      scope_summary.md                       # Scope extraction output
+      millwork_company_review.md              # Millwork company comparison (if applicable)
+      DISCREPANCY_REVIEW_[ProjectName]_[issue].pdf  # Layered annotated PDFs per discrepancy
+      ESTIMATE_REVIEW_[ProjectName]_[date].md       # Executive summary — for estimator review
   scratch/
     file_audit.md                  # Step 1 output
     drawing_pages_extracted.md     # Step 3 output
