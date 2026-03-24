@@ -33,18 +33,20 @@ def extract_innergy(input_path):
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row[0] and not row[1]:
             continue
-        # Standard INNERGY columns: name, location, origin, qty, unit, X, Y, Z, price...
-        name = str(row[0] or "").strip()
+        # Budget Data ACTUAL column layout (verified against raw data):
+        # col[0]=Origin Name, col[1]=Name, col[2]=Library Name, col[3]=SKU,
+        # col[4]=E (Qty), col[5]=F (X), col[6]=G (Y), col[7]=H (Z), col[8]=I (qty-count), col[9]=J (Location)
+        name = str(row[1] or "").strip()   # col B = Name
         if not name:
             continue
-        location = str(row[1] or "").strip()
-        origin = str(row[2] or "").strip() if len(row) > 2 else ""
-        qty = row[3] if len(row) > 3 else 1
-        unit = str(row[4] or "").strip() if len(row) > 4 else "EA"
-        x = row[5] if len(row) > 5 else None
-        y = row[6] if len(row) > 6 else None
-        z = row[7] if len(row) > 7 else None
-        price = row[8] if len(row) > 8 else None
+        location = str(row[9] or "").strip()  # col J = Location
+        origin = str(row[3] or "").strip()   # col D = SKU
+        qty = row[4] if len(row) > 4 else 1  # col E = Qty
+        unit = str(row[5] or "").strip() if len(row) > 5 else "EA"  # col F = X (used as unit when X is empty)
+        x = row[5] if len(row) > 5 else None  # col F = X dimension
+        y = row[6] if len(row) > 6 else None  # col G = Y dimension
+        z = row[7] if len(row) > 7 else None  # col H = Z dimension
+        price = row[19] if len(row) > 19 else None  # col T = Extended Labor Cost (or use col[16]?)
         items.append({
             "name": name,
             "location": location,
