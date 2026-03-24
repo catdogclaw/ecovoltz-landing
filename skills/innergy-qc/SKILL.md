@@ -208,6 +208,20 @@ If the xlsx already exists from a prior run, skip this step.
 
 ### Step 6 — Completeness Check
 
+**⚠️ DIMENSION VERIFICATION — Before flagging any discrepancy:**
+
+> **Confirm the INNERGY dimension axes:**
+> - **X** = width (horizontal face width)
+> - **Y** = length (horizontal piece length)
+> - **Z** = depth (front-to-back — **THIS is the check dimension**)
+>
+> **Floating shelf depth = Z=12"**
+> **Countertop depth = Z=25"**
+>
+> A "Floating Shelf PL" with Z=25 is **mislabeled** — it is a countertop.
+
+**Automated check:** Run `completeness_check.py` — it now auto-flags floating shelf items by Z dimension and separates mislabeled (Z=25) from correctly labeled (Z=12).
+
 Run the completeness check comparing drawing findings against INNERGY line items:
 
 ```bash
@@ -389,7 +403,7 @@ Requirements: PyMuPDF (fitz)
 |---------|-------------|--------|
 | Drawing has base cabs INNERGY doesn't | Cabinets missed in takeoff | Add line items to InnerGy |
 | INNERGY has items not in drawing | Scope item not shown in drawings | Verify with GC/architect |
-| Mislabeled floating shelf X>90 Y>20 | Countertop miscategorized | Reclassify as PL Top |
+| **Floating Shelf PL with Z=25** | Countertop miscategorized as shelf | Reclassify as PL Top — Z=25 is countertop depth |
 | Scope LF >> actual cabinet widths | Budgeted vs drawn footage | Note variance in bid |
 | Missing tall cabs in drawing | Tall cabs in spec but not shown in elevation | Confirm with InnerGy team |
 | F1-F6 filler/panels in drawing but no corresponding INNERGY items | Fillers/panels often excluded from takeoff | Flag for review; verify scope includes casework panels |
@@ -433,7 +447,11 @@ Requirements: PyMuPDF (fitz)
 ## Tips
 
 - **Always use vision for cabinet counting:** Text-based regex counting is fast but inaccurate. It counts every occurrence of a marker string — including schedule entries, legends, and material callouts that aren't actual cabinets. Use vision to get accurate counts.
-- **Counter depth vs shelf depth:** Floating shelves are typically 12" deep. Countertops are typically 25" deep. If INNERGY shows Y=25" for a floating shelf, it's likely mislabeled.
+- **Counter depth vs shelf depth:** Floating shelves are typically 12" deep. Countertops are typically 25" deep. **Check Z dimension** (depth): Z=25" = countertop mislabeled as floating shelf. Do NOT check Y.
+- **Cabinet dimension axes:** X = width (face), Y = length (piece length), Z = depth (front-to-back). The mislabeled shelf rule uses **Z only**.
+- **Reference examples from 595 Market Street:**
+  - ✅ Correct floating shelf: `X=6.29" Y=75.44" Z=12"` — floating shelf depth confirmed
+  - 🔴 Mislabeled floating shelf: `X=7.62" Y=91.49" Z=25"` — countertop depth (Z=25), reclassify as PL Top
 - **Base cabinet height:** Standard is 34" to top of base. INNERGY often uses 32.52" (34" minus 1.48"). Flag as systematic discrepancy if present across all base cabinets.
 - **Wall cabinet height:** Look at the elevation drawing's finished floor line and counter height callout.
 - **DieWall items:** Usually floor-to-ceiling panels. Verify height from drawings before flagging as discrepancy.
