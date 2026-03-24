@@ -52,10 +52,11 @@ _Last updated: 2026-03-23_
 - Can generate SVG diagrams programmatically
 
 ### Telegram
-- Bot token configured
+- Bot token: `8715752395:AAHbzHbTSdoB7aqTG1KASucCUa0mEUg2fhI`
 - John (8790093946) and Melissa (8774928535) on allowlist
 - dmScope: "main" (set 2026-03-23) — John's messages route to main session
 - John received full workflow overview 2026-03-23
+- **Outbound fix:** `sessions_send` doesn't work for outbound — use direct Bot API curl instead (see `Telegram-Direct-Message-Technique.md`)
 
 ### Vision
 - **imageModel:** `google/gemini-2.5-flash` (set 2026-03-19)
