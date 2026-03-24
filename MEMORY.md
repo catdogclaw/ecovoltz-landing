@@ -72,6 +72,12 @@ _Last updated: 2026-03-23_
   - `completeness_check.py` — checks for missing/extra/mislabeled items
   - `annotate_pdf_ocg.py` — creates OCG-layered annotated PDFs
 
+### 595 Market Street Project Key Learnings (2026-03-23)
+- **B1 base variants and F1-F6 filler/panel markers are FREQUENTLY missed in INNERGY takeoffs** — even when the operation codes exist in the Pricing Engine, they often aren't included in the bid. Always verify drawing B/F markers against INNERGY line items specifically.
+- Mislabeled floating shelf (X=91.49", Y=25") = likely PL Top / Countertop
+- Base cabinet height systematic discrepancy: drawing 34" vs INNERGY 32.52"
+- Wall cabinet height (Suite 1300): drawing 38" vs INNERGY 36"
+
 ### 595 Market Street Project (Completed 2026-03-23)
 - **Spec PDF:** 67 pages, ~43MB (595 Market Street, Suite 1200 spec)
 - **Bid spreadsheet:** INNERGY estimating spreadsheet
