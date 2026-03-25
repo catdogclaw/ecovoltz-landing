@@ -18,3 +18,16 @@
 
 ## Continuity
 Each session, you wake up fresh. These files are your memory. Read them. Update them.
+
+## Mac Backup Shortcut
+When Cat says **"mac backup"**, do this:
+1. Read the most recent backup note from `~/Documents/TimeMachine_Backup_Notes/`
+2. Diff the current system state against that note to identify what changed since
+3. Generate a new backup note with the changes since last backup
+4. Trigger Time Machine: `tmutil startbackup`
+5. Confirm to Cat when done
+
+Key conventions:
+- Note files live in `~/Documents/TimeMachine_Backup_Notes/Backup_Note_YYYY-MM-DD.txt`
+- Notes are plain text, newest first within each day
+- Always include: date, reason, what changed, files affected, and "restore this backup if" guidance

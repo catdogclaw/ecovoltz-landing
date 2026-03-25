@@ -120,11 +120,42 @@ python3 scripts/extract_pages.py \
 
 Save extracted page list to `scratch/drawing_pages_extracted.md`.
 
+**Phase 3C — Full Source Scan for Millwork Requirements (CRITICAL — do not skip):**
+
+After extracting elevation pages, scan the **FULL source PDF** (all pages, not just extracted ones) for millwork-relevant construction notes. These notes often appear on general notes pages, finish schedules, or detail sheets that are NOT elevation pages but still contain requirements that affect the bid.
+
+**Search the FULL source PDF for these patterns on EVERY page:**
+```
+"PROVIDE" + any of: cabinet, counter, vanity, shelf, panel, millwork, bracket, support, blocking, backing
+"NOTE" + any of: cabinet, counter, vanity, millwork, bracket, support, blocking, backing, in-wall
+"IN-WALL"
+"BRACKET" (anywhere in text)
+"BACKING" / "BLOCKING" (required for wall-mounted equipment)
+"STRUCTURAL STEEL" near millwork terms
+"UNDERCOUNTER" + support/brackets
+```
+
+**Output:** Save a `drawing_requirements_checklist.md` file listing every millwork-relevant note found across ALL pages of the source PDF, with:
+- Page number
+- The full note text
+- Which suite(s) it applies to (if identifiable)
+
+**This is the independent check that catches gaps the operator may have missed in INNERGY.** Compare this checklist against the INNERGY scope before generating QC deliverables — not after.
+
+Example checklist entry:
+```markdown
+### Page 31 — Note 31
+**Text:** "PROVIDE UNDERCOUNTER WORKSURFACE SUPPORT BRACKETS AT ALL BUILT IN WORKSURFACES. USE IN-WALL STEEL WHERE POSSIBLE."
+**Applies to:** ALL suites with built-in countertops/vanities
+**INNERGY coverage:** [to be filled during Step 5]
+**Status:** ✅ covered / ❌ gap
+```
+
 **Context check:** If >70% full, compact before proceeding.
 
 **⏸️ Gate:**
-- **[C] Continue** → Check context → Proceed to Step 4
-- **[R] Show Results** → Show original page count vs. extracted count, list included pages
+- **[C] Continue** → Check context → Proceed to Step 4. Ensure `drawing_requirements_checklist.md` is saved to `002_*_analysis/` — it feeds into Step 6 completeness check.
+- **[R] Show Results** → Show original page count vs. extracted count, list included pages + any millwork notes found
 - **[S] Stop** → Save state, end analysis
 
 ---
@@ -317,6 +348,7 @@ python3 scripts/completeness_check.py \
 5. **Extra items** — INNERGY has line items with no drawing evidence
 6. **Dimension discrepancies** — drawing dimensions vs. INNERGY dimensions differ
 7. **Scope LF** — stated LF vs. sum of cabinet face widths
+8. **Drawing Requirements Checklist** — Cross-reference `drawing_requirements_checklist.md` (from Phase 3C) against INNERGY scope. Every note in the checklist must have a corresponding INNERGY line item or must be flagged as a gap. This is the most common miss — millwork requirements that appear as notes on general note pages, not on elevation drawings.
 
 **⚠️ CRITICAL:** F1–F6 filler/panel pieces are FREQUENTLY excluded from INNERGY takeoffs. Also verify DieWall panels and other non-standard casework pieces.
 
@@ -327,8 +359,8 @@ Save to `completeness_report.md`.
 **Context check:** If >70% full, compact before proceeding.
 
 **⏸️ Gate:**
-- **[C] Continue** → Check context → Proceed to Step 7
-- **[R] Show Results** → Display all completeness issues found
+- **[C] Continue** → Verify `drawing_requirements_checklist.md` has been reviewed against INNERGY scope. Every item in the checklist must have a ✅ or ❌ status. Proceed to Step 7.
+- **[R] Show Results** → Display all completeness issues found + checklist review status
 - **[S] Stop** → Save state, end analysis
 
 ---
@@ -357,7 +389,11 @@ Save to `millwork_company_review.md`.
 
 ### Step 8 — Review Documents
 
-Generate the final QC deliverables:
+**Required inputs before starting:**
+1. `innergy_qc.xlsx` — Step 5 output
+2. `completeness_report.md` — Step 6 output
+3. **`drawing_requirements_checklist.md` — Phase 3C output** ⬅️ **CRITICAL — must be completed before Step 8**
+4. `innergy_qc_colorcoded.xlsx` — from Step 8A
 
 **A. Color-coded QC Spreadsheet**
 - Every INNERGY line item with drawing verification status:
@@ -573,12 +609,15 @@ python3 scripts/identify_coords.py \
       scope_of_work.pdf
       [other customer supplied files]
     002_project_name_analysis/
+      drawings_extracted.pdf        # Step 3 output — confirmed millwork pages extracted from source PDF
       innergy_qc.xlsx                              # Final comparison (OC cols populated, color-coded)
+      innergy_qc_colorcoded.xlsx                  # Color-coded QC spreadsheet
       completeness_report.md                       # Completeness check output
       scope_summary.md                             # Scope extraction output
       millwork_company_review.md                    # Millwork company comparison (if applicable)
+      EXECUTIVE_SUMMARY.md                        # Executive summary — for estimator review
       DISCREPANCY_REVIEW_[ProjectName]_[issue].pdf # Layered annotated PDFs per discrepancy
-      ESTIMATE_REVIEW_[ProjectName]_[date].md      # Executive summary — for estimator review
+      ESTIMATE_REVIEW_[ProjectName]_[date].md      # Legacy executive summary naming
   scratch/
     file_audit.md                  # Step 1 output
     drawing_pages_extracted.md     # Step 3 output
