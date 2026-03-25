@@ -7,6 +7,16 @@ Verifies that the millwork company bid (INNERGY output) accurately reflects the 
 
 ---
 
+## Core Principles
+
+**Verify from primary source, not prior runs.** Each project run must verify dimensions directly from the drawing PDFs — do not assume prior-run findings about cabinet heights, widths, or marker meanings are correct without confirming them on the current drawings. Drawing conventions vary by project.
+
+**Extract dimension strings before interpreting them.** Never infer what a dimension string means without seeing its position and context on the drawing. Extract all labeled dimensions first, map them to what they annotate, then build rules.
+
+**Flag uncertainty explicitly.** When you are inferring meaning (e.g., "this label must be the wall cabinet height"), state the inference and the reasoning. Do not present inferences as facts.
+
+---
+
 ## Project Setup (PREP)
 
 When files appear in `~/Desktop/Incoming_Projects/`:
@@ -103,8 +113,10 @@ Extract confirmed millwork pages to `drawings_extracted.pdf`:
 python3 scripts/extract_pages.py \
   --input "path/to/source_drawing.pdf" \
   --output "path/to/analysis/drawings_extracted.pdf" \
-  --pages "1,5,6,25,26,27,28,45,46,56"
+  --pages "44,45,46"
 ```
+
+**⚠️ Page numbers are 1-indexed** (page 1 = first page of the PDF, same as human page numbers). Always verify with a text scan first.
 
 Save extracted page list to `scratch/drawing_pages_extracted.md`.
 
@@ -161,12 +173,49 @@ This is sheet [A401] interior elevations for Suite [XXXX]. Analyze carefully:
 - F6 = Floating shelf marker (where used)
 - Distinct cabinet SECTION counts (base runs, upper runs, islands)
 
+**⚠️ REQUIRED: Extract dimension strings before recording findings.**
+
+After vision analysis, extract ALL dimension callout strings from the drawing page with their positions. This is how you know WHAT each dimension actually labels:
+
+```python
+import fitz
+doc = fitz.open('drawings_extracted.pdf')
+page = doc[page_idx]
+
+# Extract all dimension text with positions
+dims = []
+for b in page.get_text('dict')['blocks']:
+    if b['type'] == 0:
+        for line in b['lines']:
+            for span in line['spans']:
+                text = span['text'].strip()
+                bbox = span['bbox']
+                # Filter to dimension-like strings (with ' or ")
+                if any(c in text for c in ['"', "'"]) and any(c.isdigit() for c in text):
+                    dims.append({"text": text, "x": bbox[0], "y": bbox[1]})
+
+# Sort by y (top to bottom), then group by x position (left to right)
+dims.sort(key=lambda d: (d['y'], d['x']))
+for d in dims:
+    print(f"  y={d['y']:.0f}  x={d['x']:.0f}: {d['text']}")
+```
+
+**What to look for:**
+- Base cabinet height: usually "34" or "34\" MAX" near base cabinets
+- Wall cabinet heights: usually smaller dimensions (1'-2", 1'-4", 1'-8", etc.) near upper cabinets
+- Total runs: larger dimensions like "7'-6"" or "16'-0"" at the bottom or sides
+- Floating shelf locations: F6 or F4 markers near shelf callouts
+
+**⚠️ Map dimensions to what they label — don't assume.** A dimension string appearing near a cabinet section does not automatically mean it labels that section. Cross-reference with multiple dimension strings on the same vertical or horizontal line.
+
 **For each suite, record:**
 - Suite name and floor
 - Cabinet sections by type (base runs, upper runs, islands)
 - Width of each distinct section (from dimensions on drawing)
+- **Actual dimension callouts with their x,y positions** (from extraction above)
 - Special items: trash pull-outs, coat rods, solid surface, floating shelves
-- Base height: 34" MAX standard
+- Base height: from drawing callout (not assumed — confirm from extraction)
+- Wall cabinet height: from drawing callout (confirm from extraction)
 - Total calculated LF: sum of cabinet face widths
 - Comparison to stated LF from Step 2 scope
 
@@ -207,6 +256,35 @@ If the xlsx already exists from a prior run, skip this step.
 ---
 
 ### Step 6 — Completeness Check
+
+**⚠️ BEFORE RUNNING ANY DISCREPANCY RULE — Verify from drawing dimensions first.**
+
+Run this extraction to get actual dimension callouts from the drawings:
+
+```python
+import fitz
+doc = fitz.open('drawings_extracted.pdf')
+for page_idx in [0, 1, 2]:  # each extracted suite page
+    page = doc[page_idx]
+    dims = []
+    for b in page.get_text('dict')['blocks']:
+        if b['type'] == 0:
+            for line in b['lines']:
+                for span in line['spans']:
+                    text = span['text'].strip()
+                    bbox = span['bbox']
+                    if any(c in text for c in ['"', "'"]) and any(c.isdigit() for c in text):
+                        dims.append({"text": text, "x": bbox[0], "y": bbox[1]})
+    dims.sort(key=lambda d: (d['y'], d['x']))
+    print(f"=== Page {page_idx} dimensions ===")
+    for d in dims:
+        print(f"  y={d['y']:.0f}  x={d['x']:.0f}: {d['text']}")
+```
+
+**Review the output and manually map each dimension to what it labels** before coding any discrepancy rules. Ask:
+- Is this dimension callout for the base cabinet, wall cabinet, or total run?
+- What does each smaller dimension (e.g., 1'-8") actually annotate?
+- Do the tall (total) dimensions confirm the section heights?
 
 **⚠️ DIMENSION VERIFICATION — Before flagging any discrepancy:**
 
@@ -288,57 +366,63 @@ Generate the final QC deliverables:
   - ⚠️ NEEDS REVIEW — could not verify, needs field confirmation
   - ❌ MISSING — in drawing but not in INNERGY
 
-**Always run clean_qc_xlsx.py after populate_qc_xlsx.py** — this removes all empty columns to produce a clean side-by-side:
+**Two-step process:**
 
 ```bash
-python3 scripts/populate_qc_xlsx.py \
-  --xlsx path/to/innergy_qc.xlsx \
-  --output path/to/innergy_qc_comparison_raw.xlsx
+# Step 1: Build comparison file from INNERGY xlsx
+python3 scripts/build_comparison.py \
+  --input "path/to/INNERGY_bid.xlsx" \
+  --output "path/to/analysis/innergy_qc.xlsx"
 
-python3 scripts/clean_qc_xlsx.py \
-  --xlsx path/to/innergy_qc_comparison_raw.xlsx \
-  --output path/to/innergy_qc_comparison.xlsx
+# Step 2: Populate OC columns with drawing dimensions and color-code (single output file)
+python3 scripts/populate_oc_columns.py \
+  --input "path/to/analysis/innergy_qc.xlsx" \
+  --output "path/to/analysis/innergy_qc.xlsx"
 ```
 
-Final columns: Line #, Name, Location, Origin, X, Y, Z, Qty, OpenClaw Z, Z Var (red=mislabeled, green=correct), Status, Notes
+Final columns: Line #, Name, Location, Origin, X, Y, Z, Qty, OC X, OC Y, OC Z
+(No OC Qty column — quantity is always 1 per line, no comparison needed)
+
+**Color coding:**
+- 🟢 GREEN = INNERGY matches drawing
+- 🔴 RED = INNERGY differs from drawing (known discrepancy)
+- ⬜ GREY = No physical dimensions (Add.Hours, DieWall, coat rod) or Z-depth not shown in elevation
+- OC columns: OC X, OC Y, OC Z (no OC Qty — qty is always 1 per line)
 
 **B. Layered Annotated PDF** (per discrepancy type)
 
-⚠️ **REQUIRED: Every discrepancy PDF must use the annotate_pdf.py script with real lasso coordinates.**
+⚠️ **Coordinates are auto-detected from the PDF — use `--issue` flag instead of manual `--lasso`.**
 
-1. Identify the exact pixel coordinates of the discrepancy on the drawing page:
-   - Use `identify_coords.py` (see below) or a PDF viewer to get coordinates
-   - Lasso marks the exact area on the drawing; Comments box holds the annotation text
-2. Run the script for each discrepancy:
+Run the script for each discrepancy type using the `--issue` flag:
 
 ```bash
+# Floating shelf mislabel — auto-detects F6 marker on Suite 1300 page
 python3 scripts/annotate_pdf.py \
   --input "path/to/drawings_extracted.pdf" \
-  --output "path/to/analysis/DISCREPANCY_REVIEW_[project_name]_[issue].pdf" \
-  --pages "0,1,2" \
-  --title "Description of discrepancy" \
-  --discrepancy "Line 1 of finding|Line 2|Action required" \
-  --lasso "x1,y1,x2,y2"
-```
-
-**Arguments:**
-- `--pages`: Comma-separated 0-indexed page numbers (0 = first page)
-- `--title`: Brief title for the comment box header
-- `--discrepancy`: Description text (separate lines with `|`)
-- `--lasso`: REQUIRED — bounding box of the discrepancy area in points (from page origin, top-left = 0,0)
-
-**To find coordinates:** Open the extracted PDF in FoxIt/Adobe, hover over the discrepancy area, note the X,Y position from the status bar.
-
-**Example:**
-```bash
-python3 scripts/annotate_pdf.py \
-  --input "002_analysis/drawings_extracted.pdf" \
-  --output "002_analysis/DISCREPANCY_REVIEW_595_Market_floating_shelf_mislabel.pdf" \
+  --output "path/to/analysis/DISCREPANCY_REVIEW_[project]_floating_shelf.pdf" \
   --pages "2" \
   --title "Floating Shelf Mislabel" \
-  --discrepancy "18 items labeled Floating Shelf PL have Z=25 (countertop depth)|Standard floating shelf depth = Z=12|Reclassify as PL Top or Solid Surface" \
-  --lasso "100,100,700,500"
+  --discrepancy "10 items labeled Floating Shelf PL have Y=25 (countertop depth)|Standard floating shelf depth = Y=12|Reclassify as PL Top or Solid Surface" \
+  --issue floating_shelf
 ```
+
+**Supported `--issue` types:**
+| Issue | Page | Searches for | Notes |
+|-------|------|-------------|-------|
+| `floating_shelf` | 2 (Suite 1300) | F6 marker | Floating shelf locations |
+| `base_cabinet` | 0 (Suite 1150) | 34" MAX | Base cabinet height callout |
+| `trash_cabinet` | 0 | T marker | Trash/recycle cabinet area |
+
+**Manual coordinates (override):** Use `--lasso x1,y1,x2,y2` instead of `--issue` if you have exact coordinates from a PDF viewer.
+
+**To find coordinates for a new issue type:**
+```bash
+python3 scripts/find_annotation_coords.py \
+  --pdf path/to/drawings_extracted.pdf \
+  --page 2 \
+  --search "F6"
+```
+Outputs: `x1,y1,x2,y2` — use these with `--lasso`.
 
 **Output:** One PDF per discrepancy, with OCG toggle layers.
 - **Lasso layer** (red dashed box): marks the discrepancy area on the drawing
@@ -369,6 +453,34 @@ Example: `ESTIMATE_REVIEW_595_Market_Street_2026-03-24.md`
 
 ## Scripts
 
+### scripts/build_comparison.py
+Builds the initial QC comparison spreadsheet from the raw INNERGY bid xlsx. Extracts all line items with Name, Location (with SUITE info), Origin/SKU, X, Y, Z, Qty — plus empty OC columns ready for population.
+```
+python3 scripts/build_comparison.py \
+  --input path/to/INNERGY_bid.xlsx \
+  --output path/to/analysis/innergy_qc_comparison.xlsx
+```
+**⚠️ IMPORTANT:** The INNERGY Budget Data sheet has Location in column 10 (not column 3). This script correctly reads from column 10 to capture SUITE numbers. Requirements: openpyxl
+
+### scripts/populate_oc_columns.py
+Populates the OC (OpenClaw/Drawing) columns with drawing-extracted dimensions and applies color coding. Uses verified discrepancy rules:
+
+| Rule | OC Value | Color |
+|------|----------|-------|
+| Floating shelf Y=25 (mislabeled) | OC_Y=12, OC_Z=12 | OC_Y=RED, OC_Z=GREEN |
+| Floating shelf Y=12 (correct) | OC_Y=12, OC_Z=12 | GREEN |
+| Base cabinet | OC_Y=34 | GREEN (INNERGY ~32.52 = expected tolerance) |
+| Wall cabinet Suite 1300 | OC_Y=38 | RED (INNERGY ~36) |
+| Tall cabinet | OC_Y=90 | GREEN (INNERGY ~90) |
+| All other items | OC = INNERGY value | GREEN (no known discrepancy) |
+
+```
+python3 scripts/populate_oc_columns.py \
+  --input path/to/analysis/innergy_qc_comparison.xlsx \
+  --output path/to/analysis/innergy_qc_comparison_filled.xlsx
+```
+Requirements: openpyxl
+
 ### scripts/modify_spreadsheet.py
 Reads INNERGY xlsx → extracts all line items with X/Y/Z/qty/suite → outputs clean xlsx for QC.
 ```
@@ -386,24 +498,54 @@ python3 scripts/completeness_check.py \
   --innergy path/to/innergy_qc.xlsx \
   --output path/to/completeness_report.md
 ```
-**Drawing markers detected (text scan):** PL1, PL2, SS1, SS2, F1–F6 (plus P1, ST3, B1, B2 which appear in drawings but are materials not cabinets — verify with vision before counting)
 Requirements: PyMuPDF (fitz), openpyxl
 
-### scripts/populate_qc_xlsx.py
-Populates the QC spreadsheet with verification findings. Reads from `scratch/findings_*.md` files.
-Requirements: openpyxl
-
 ### scripts/annotate_pdf.py
-Creates OCG-layered annotated PDFs from source drawings.
+Creates OCG-layered annotated PDFs from source drawings. Supports auto-coordinate detection via `--issue` flag.
 ```
+# Auto-detect coordinates
 python3 scripts/annotate_pdf.py \
   --input path/to/drawings.pdf \
   --output path/to/output.pdf \
-  --pages 1,2,3 \
-  --discrepancy "Description of discrepancy" \
+  --pages 2 \
+  --discrepancy "Line 1|Line 2|Action" \
+  --title "Discrepancy title" \
+  --issue floating_shelf
+
+# Manual coordinates
+python3 scripts/annotate_pdf.py \
+  --input path/to/drawings.pdf \
+  --output path/to/output.pdf \
+  --pages 2 \
+  --discrepancy "Line 1|Line 2|Action" \
+  --title "Discrepancy title" \
   --lasso "x1,y1,x2,y2"
 ```
 Requirements: PyMuPDF (fitz)
+
+### scripts/find_annotation_coords.py
+Finds bounding-box coordinates of markers/text on a PDF page for use with `--lasso`.
+```
+python3 scripts/find_annotation_coords.py \
+  --pdf path/to/drawings.pdf \
+  --page 2 \
+  --issue floating_shelf
+
+python3 scripts/find_annotation_coords.py \
+  --pdf path/to/drawings.pdf \
+  --page 2 \
+  --search "F6"
+```
+Requirements: PyMuPDF (fitz)
+
+### scripts/identify_coords.py
+Renders a PDF page as a PNG for manual coordinate finding (image viewer required).
+```
+python3 scripts/identify_coords.py \
+  --input path/to/drawings.pdf \
+  --output coords.png \
+  --page 2
+```
 
 ---
 
@@ -413,7 +555,7 @@ Requirements: PyMuPDF (fitz)
 |---------|-------------|--------|
 | Drawing has base cabs INNERGY doesn't | Cabinets missed in takeoff | Add line items to InnerGy |
 | INNERGY has items not in drawing | Scope item not shown in drawings | Verify with GC/architect |
-| **Floating Shelf PL with Z=25** | Countertop miscategorized as shelf | Reclassify as PL Top — Z=25 is countertop depth |
+| **Floating Shelf PL with Y=25** | Countertop miscategorized as shelf | Reclassify as PL Top — Y=25 is countertop depth |
 | Scope LF >> actual cabinet widths | Budgeted vs drawn footage | Note variance in bid |
 | Missing tall cabs in drawing | Tall cabs in spec but not shown in elevation | Confirm with InnerGy team |
 | F1-F6 filler/panels in drawing but no corresponding INNERGY items | Fillers/panels often excluded from takeoff | Flag for review; verify scope includes casework panels |
@@ -431,13 +573,12 @@ Requirements: PyMuPDF (fitz)
       scope_of_work.pdf
       [other customer supplied files]
     002_project_name_analysis/
-      innergy_qc.xlsx                          # Extracted INNERGY line items
-      innergy_qc_comparison.xlsx                # Side-by-side comparison (color-coded, empty cols removed)
-      completeness_report.md                     # Completeness check output
-      scope_summary.md                           # Scope extraction output
-      millwork_company_review.md                  # Millwork company comparison (if applicable)
-      DISCREPANCY_REVIEW_[ProjectName]_[issue].pdf  # Layered annotated PDFs per discrepancy
-      ESTIMATE_REVIEW_[ProjectName]_[date].md       # Executive summary — for estimator review
+      innergy_qc.xlsx                              # Final comparison (OC cols populated, color-coded)
+      completeness_report.md                       # Completeness check output
+      scope_summary.md                             # Scope extraction output
+      millwork_company_review.md                    # Millwork company comparison (if applicable)
+      DISCREPANCY_REVIEW_[ProjectName]_[issue].pdf # Layered annotated PDFs per discrepancy
+      ESTIMATE_REVIEW_[ProjectName]_[date].md      # Executive summary — for estimator review
   scratch/
     file_audit.md                  # Step 1 output
     drawing_pages_extracted.md     # Step 3 output
@@ -457,14 +598,11 @@ Requirements: PyMuPDF (fitz)
 
 ## Tips
 
-- **Always use vision for cabinet counting:** Text-based regex counting is fast but inaccurate. It counts every occurrence of a marker string — including schedule entries, legends, and material callouts that aren't actual cabinets. Use vision to get accurate counts.
-- **Counter depth vs shelf depth:** Floating shelves are typically 12" deep. Countertops are typically 25" deep. **Check Z dimension** (depth): Z=25" = countertop mislabeled as floating shelf. Do NOT check Y.
-- **Cabinet dimension axes:** X = width (face), Y = length (piece length), Z = depth (front-to-back). The mislabeled shelf rule uses **Z only**.
-- **Reference examples from 595 Market Street:**
-  - ✅ Correct floating shelf: `X=6.29" Y=75.44" Z=12"` — floating shelf depth confirmed
-  - 🔴 Mislabeled floating shelf: `X=7.62" Y=91.49" Z=25"` — countertop depth (Z=25), reclassify as PL Top
-- **Base cabinet height:** Standard is 34" to top of base. INNERGY often uses 32.52" (34" minus 1.48"). Flag as systematic discrepancy if present across all base cabinets.
-- **Wall cabinet height:** Look at the elevation drawing's finished floor line and counter height callout.
+- **Extract dimension strings before interpreting them:** Use `fitz` to extract ALL dimension callouts (strings with `'` or `"`) with their x,y positions. Sort by y then x to see the vertical stacking. Then manually map each to what it labels. Never assume a dimension annotates the nearest cabinet without checking context.
+- **Dimension strings vary by drawing:** The same annotation style can mean different things on different projects. A "1'-8"" could be a wall cabinet height, a shelf spacing, or a filler width. Always extract and verify on each project.
+- **Verify cabinet heights from callouts:** Don't assume base = 34", wall = 36", or tall = 90" across all projects. Extract the actual dimension strings and confirm from the drawing's own callouts.
+- **Floating shelf mislabel detection:** Standard floating shelf depth = 12". Countertop depth = 25". On elevations where Y or Z = 25" and labeled "Floating Shelf PL", it's a mislabeled countertop. Verify with dimension extraction first.
+- **Base cabinet height:** Standard is 34" to top of base. INNERGY often uses 32.52" (34" minus ~1.48" manufacturing tolerance). This is a known systematic difference — not necessarily an error.
 - **DieWall items:** Usually floor-to-ceiling panels. Verify height from drawings before flagging as discrepancy.
 - **ST3 = backsplash tile, NOT a wall cabinet.** B1/B2 = rubber base material, NOT cabinet variants. P1 = paint finish, NOT a cabinet. Always verify what a marker actually means before counting it.
 - **T/R/C are features within cabinets:** Trash, Recycle, Compost designations appear inside base cabinet runs — they are not separate cabinet types.

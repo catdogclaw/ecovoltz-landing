@@ -17,7 +17,7 @@ Column layout (1-indexed openpyxl):
   col 10: Location (full)
 """
 
-import sys, openpyxl
+import sys, argparse, openpyxl
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 
 GREEN = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
@@ -53,18 +53,18 @@ def build_comparison(input_xlsx, output_xlsx):
     ws.title = "QC Comparison"
 
     HDRS = ["Line #", "Name", "Location", "Origin", "X", "Y", "Z", "Qty",
-            "OC X", "OC Y", "OC Z", "OC Qty"]
+            "OC X", "OC Y", "OC Z"]
     for ci, h in enumerate(HDRS, 1):
         cc(ws, 1, ci, h, fill=HDR, bold=True, color="FFFFFF", center=True)
 
     row_out = 2
     for r in range(2, ws_in.max_row + 1):
         # Budget Data columns (1-indexed):
-        # col 2=Name, col 3=Location, col 4=Origin, col 5=Qty
-        # col 7=X, col 8=Y, col 9=Z
+        # col 2=Name, col 3=Library Name, col 4=SKU, col 5=Qty
+        # col 7=X, col 8=Y, col 9=Z, col 10=Location (SUITE info)
         name     = ws_in.cell(row=r, column=2).value
-        location = ws_in.cell(row=r, column=3).value
-        origin   = ws_in.cell(row=r, column=4).value
+        location = ws_in.cell(row=r, column=10).value  # Location with SUITE info (col 10)
+        origin   = ws_in.cell(row=r, column=4).value   # SKU as Origin
         qty      = ws_in.cell(row=r, column=5).value
         x_ig     = n(ws_in.cell(row=r, column=7).value)
         y_ig     = n(ws_in.cell(row=r, column=8).value)
@@ -81,7 +81,7 @@ def build_comparison(input_xlsx, output_xlsx):
             oc_z = 12.0 if z_ig == 25 else z_ig
         else:
             oc_z = None
-        oc_x = None; oc_y = None; oc_qty = None
+        oc_x = None; oc_y = None
 
         # Write INNERGY values
         cc(ws, row_out, 1, row_out - 1)        # Line #
@@ -107,7 +107,6 @@ def build_comparison(input_xlsx, output_xlsx):
         color_oc(9,  x_ig,  oc_x)
         color_oc(10, y_ig,  oc_y)
         color_oc(11, z_ig,  oc_z)
-        color_oc(12, qty,   oc_qty)
 
         row_out += 1
 
@@ -116,7 +115,8 @@ def build_comparison(input_xlsx, output_xlsx):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4 or sys.argv[1] != "--input" or sys.argv[3] != "--output":
-        print("Usage: build_comparison.py --input path --output path")
-        sys.exit(1)
-    build_comparison(sys.argv[2], sys.argv[4])
+    parser = argparse.ArgumentParser(description="Build QC comparison spreadsheet from INNERGY xlsx.")
+    parser.add_argument("--input", "-i", required=True, help="Input INNERGY xlsx path")
+    parser.add_argument("--output", "-o", required=True, help="Output comparison xlsx path")
+    args = parser.parse_args()
+    build_comparison(args.input, args.output)

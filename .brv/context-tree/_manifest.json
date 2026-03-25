@@ -1,0 +1,79 @@
+{
+  "active_context": [
+    {
+      "order": 3,
+      "path": "_index.md",
+      "tokens": 472,
+      "type": "summary"
+    },
+    {
+      "order": 2,
+      "path": "agents/_index.md",
+      "tokens": 167,
+      "type": "summary"
+    },
+    {
+      "order": 2,
+      "path": "automation/_index.md",
+      "tokens": 421,
+      "type": "summary"
+    },
+    {
+      "order": 1,
+      "path": "agents/catdogbot/_index.md",
+      "tokens": 123,
+      "type": "summary"
+    },
+    {
+      "order": 1,
+      "path": "automation/millwork_qc/_index.md",
+      "tokens": 523,
+      "type": "summary"
+    },
+    {
+      "order": 0,
+      "path": "automation/millwork_qc/floating_shelf_mislabel/_index.md",
+      "tokens": 126,
+      "type": "summary"
+    },
+    {
+      "importance": 50,
+      "path": "agents/catdogbot/catdogbot_profile.md",
+      "tokens": 236,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "automation/millwork_qc/drawing_dimension_extraction.md",
+      "tokens": 272,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "automation/millwork_qc/floating_shelf_mislabel/floating_shelf_mislabel_detection.md",
+      "tokens": 278,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "automation/millwork_qc/innergy_qc_skill.md",
+      "tokens": 233,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "automation/millwork_qc/pdf_extraction_workflow.md",
+      "tokens": 221,
+      "type": "context"
+    }
+  ],
+  "generated_at": "2026-03-25T02:22:50.656Z",
+  "lane_tokens": {
+    "contexts": 1240,
+    "stubs": 0,
+    "summaries": 1832
+  },
+  "source_fingerprint": "8aaaf168ea44a1f0d095e620ff8f22cb073747e1057772d0832baaa325be1bb1",
+  "total_tokens": 3072,
+  "version": 1
+}

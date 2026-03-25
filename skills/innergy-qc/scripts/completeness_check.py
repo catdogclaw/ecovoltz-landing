@@ -104,18 +104,17 @@ def count_innergy_items(qc_xlsx_path):
 def check_mislabeled_floating_shelves(qc_xlsx_path):
     """
     Check floating shelf items for mislabeling.
-    DIMENSION AXES (INNERGY convention):
-      X = width  (face width of piece)
-      Y = length (horizontal piece length)
-      Z = depth  (front-to-back — THIS IS WHAT MATTERS)
 
-    RULE: Floating shelf standard depth = Z=12"
-           Countertop depth = Z=25"
+    DIMENSION AXES (INNERGY convention in this dataset):
+      X = width  (face width)
+      Y = length (piece length — THIS IS THE CHECK DIMENSION in this dataset)
+      Z = depth  (front-to-back, typically 2" for shelves)
 
-    A "Floating Shelf PL" item with Z=25" is mislabeled — it is a countertop.
-    Additionally, Y>90" + Z=25" is a redundant confirmation signal (long countertop pieces).
+    RULE: Floating shelf Y-length = 12"
+           Countertop Y-length = 25" (countertop depth mislabeled as shelf)
 
-    ALSO CHECK: Items with Y>90" AND Z=25" are definitely countertops mislabeled as shelves.
+    A "Floating Shelf PL" item with Y=25" is mislabeled — it is a countertop.
+    Z=2 is the shelf thickness and is the same for both shelf and countertop.
     """
     wb = openpyxl.load_workbook(qc_xlsx_path, data_only=True)
     ws = wb["QC Comparison"]
@@ -123,13 +122,13 @@ def check_mislabeled_floating_shelves(qc_xlsx_path):
     correct = []
     for row in ws.iter_rows(min_row=2, values_only=True):
         name = str(row[1] or "")
-        x = row[4]  # X = width
-        y = row[5]  # Y = length
-        z = row[6]  # Z = depth (THIS is the check)
-        if "floating shelf" in name.lower() and z is not None:
+        x = row[4]
+        y = row[5]
+        z = row[6]
+        if "floating shelf" in name.lower() and y is not None:
             try:
-                z_val = float(z)
-                y_val = float(y) if y is not None else 0
+                y_val = float(y)
+                z_val = float(z) if z is not None else None
                 item = {
                     "name": name,
                     "x": float(x) if x is not None else None,
@@ -137,20 +136,20 @@ def check_mislabeled_floating_shelves(qc_xlsx_path):
                     "z": z_val,
                     "loc": str(row[2] or "")[:60],
                 }
-                if z_val == 25:
-                    # Z=25 is countertop depth — mislabeled
-                    item["likely"] = "COUNTERTOP (Z=25)"
-                    item["signal"] = "Z=25 confirms countertop depth"
+                if y_val == 25:
+                    # Y=25 is countertop depth — mislabeled
+                    item["likely"] = "COUNTERTOP (Y=25)"
+                    item["signal"] = "Y=25 confirms countertop depth"
                     mislabeled.append(item)
-                elif z_val == 12:
-                    # Z=12 is floating shelf depth — correctly labeled
-                    item["likely"] = "FLOATING SHELF (Z=12)"
-                    item["signal"] = "Z=12 matches shelf depth"
+                elif y_val == 12:
+                    # Y=12 is floating shelf depth — correctly labeled
+                    item["likely"] = "FLOATING SHELF (Y=12)"
+                    item["signal"] = "Y=12 matches shelf depth"
                     correct.append(item)
                 else:
-                    # Non-standard depth
-                    item["likely"] = f"UNUSUAL (Z={z_val})"
-                    item["signal"] = "Check Z manually"
+                    # Non-standard Y length
+                    item["likely"] = f"UNUSUAL (Y={y_val})"
+                    item["signal"] = "Check manually"
                     mislabeled.append(item)
             except (ValueError, TypeError):
                 pass
@@ -171,20 +170,20 @@ def run_completeness_check(drawing_pdf_path, qc_xlsx_path, drawing_page_map, out
         "",
         "Before reviewing findings, confirm the INNERGY dimension axes:",
         "- **X** = width  (horizontal face width)",
-        "- **Y** = length (horizontal piece length)",
-        "- **Z** = depth  (front-to-back — THIS is the floating shelf check dimension)",
+        "- **Y** = length (horizontal piece length — THIS IS THE CHECK DIMENSION in this dataset)",
+        "- **Z** = depth  (front-to-back, typically 2\" for floating shelves in this dataset)",
         "",
-        "**Floating shelf depth = Z=12\"**",
-        "**Countertop depth = Z=25\"**",
+        "**Floating shelf Y-length = 12\"**",
+        "**Countertop Y-length = 25\"**",
         "",
-        "A mislabeled floating shelf has Z=25 (countertop depth).",
+        "A mislabeled floating shelf has Y=25 (countertop length, not shelf).",
         "",
     ]
 
     if mislabeled:
-        mis_z25 = [m for m in mislabeled if "COUNTERTOP" in m.get("likely", "")]
+        mis_y25 = [m for m in mislabeled if "COUNTERTOP" in m.get("likely", "")]
         lines += [
-            f"## 🔴 MISLABELED Floating Shelves ({len(mis_z25)} items with Z=25 — countertops)",
+            f"## 🔴 MISLABELED Floating Shelves ({len(mis_y25)} items with Y=25 — countertops)",
             "",
             "| Suite | Name | X | Y | Z | Signal |",
             "|-------|------|---|---|---|--------|",
@@ -192,21 +191,25 @@ def run_completeness_check(drawing_pdf_path, qc_xlsx_path, drawing_page_map, out
         for m in mislabeled:
             likely = m.get("likely", "UNKNOWN")
             signal = m.get("signal", "")
-            lines.append(f"| {m['loc'][:25]} | {m['name'][:40]} | {m.get('x', 'N/A'):.2f if isinstance(m.get('x'), float) else 'N/A'} | {m.get('y', 0):.2f} | {m.get('z', 0):.2f} | {signal} |")
+            x_val = m.get('x')
+            x_str = f"{x_val:.2f}" if isinstance(x_val, float) else str(x_val or 'N/A')
+            lines.append(f"| {m['loc'][:25]} | {m['name'][:40]} | {x_str} | {m.get('y', 0):.2f} | {m.get('z', 0):.2f} | {signal} |")
         lines.append("")
-        lines.append(f"**🔴 Action:** Reclassify {len(mis_z25)} items as PL Tops in InnerGy. Z=25 = countertop depth, not shelf.\n")
+        lines.append(f"**🔴 Action:** Reclassify {len(mis_y25)} items as PL Tops in InnerGy. Y=25 = countertop length, not shelf.\n")
 
     if correct:
         lines += [
-            f"## ✅ Correctly Labeled Floating Shelves ({len(correct)} items with Z=12)",
+            f"## ✅ Correctly Labeled Floating Shelves ({len(correct)} items with Y=12)",
             "",
             "| Suite | Name | X | Y | Z |",
             "|-------|------|---|---|---|",
         ]
         for c in correct:
-            lines.append(f"| {c['loc'][:25]} | {c['name'][:40]} | {c.get('x', 'N/A'):.2f if isinstance(c.get('x'), float) else 'N/A'} | {c.get('y', 0):.2f} | {c.get('z', 0):.2f} |")
+            x_v = c.get('x')
+            x_str = f"{x_v:.2f}" if isinstance(x_v, float) else str(x_v or 'N/A')
+            lines.append(f"| {c['loc'][:25]} | {c['name'][:40]} | {x_str} | {c.get('y', 0):.2f} | {c.get('z', 0):.2f} |")
         lines.append("")
-        lines.append(f"**✅ These {len(correct)} items are correctly labeled.** Z=12 matches floating shelf depth.\n")
+        lines.append(f"**✅ These {len(correct)} items are correctly labeled.** Y=12 matches floating shelf length.\n")
 
     lines += [
         "## Drawing Cabinet Marker Counts (from A401 elevation sheets)",
@@ -214,7 +217,7 @@ def run_completeness_check(drawing_pdf_path, qc_xlsx_path, drawing_page_map, out
         "| Marker | Count | Description |",
         "|--------|-------|-------------|",
     ]
-    for page_idx, suite_name in sorted(drawing_page_map.items()):
+    for suite_name, page_idx in sorted(drawing_page_map.items()):
         counts = estimate_cabinet_count_by_type(doc, page_idx)
         lines.append(f"### {suite_name} (source page {page_idx + 1})")
         lines.append("")
@@ -253,7 +256,7 @@ def run_completeness_check(drawing_pdf_path, qc_xlsx_path, drawing_page_map, out
         "|---------|-------------|--------|",
         "| Drawing has base cabs INNERGY doesn't | Cabinets missed in takeoff | Add to InnerGy |",
         "| INNERGY has items not in drawing | Scope item not shown in drawings | Verify with GC/architect |",
-        "| Mislabeled floating shelf Z=25 | Countertop depth (Z=25) mislabeled as shelf (Z=12) | Reclassify as PL Top |",
+        "| Mislabeled floating shelf Y=25 | Countertop length (Y=25) mislabeled as shelf (Y=12) | Reclassify as PL Top |",
         "| Scope LF >> actual cab widths | Budgeted vs. drawn footage | Note variance in bid |",
     ]
 
@@ -274,9 +277,12 @@ if __name__ == "__main__":
     parser.add_argument("--innergy", required=True)
     parser.add_argument("--output", help="Path for output markdown report")
     args = parser.parse_args()
+    # Page indices for drawings_extracted.pdf (4 pages, 0-indexed):
+    # Page 0 = Suite 1200, Page 1 = Suite 1150, Page 2 = Suite 1275/1285, Page 3 = Suite 1300
     page_map = {
-        "Suite 1150": 43,
-        "Suite 1275/1285": 44,
-        "Suite 1300": 45,
+        "Suite 1200": 0,
+        "Suite 1150": 1,
+        "Suite 1275/1285": 2,
+        "Suite 1300": 3,
     }
     run_completeness_check(args.drawing, args.innergy, page_map, args.output)

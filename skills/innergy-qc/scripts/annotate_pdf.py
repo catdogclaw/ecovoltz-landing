@@ -113,13 +113,54 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True)
     parser.add_argument("--pages", required=True, help="Comma-separated 0-indexed page numbers")
     parser.add_argument("--discrepancy", required=True)
-    parser.add_argument("--lasso", required=True, help="x1,y1,x2,y2")
+    parser.add_argument("--lasso", help="x1,y1,x2,y2 (overrides --issue)")
     parser.add_argument("--title", default="QC Annotation")
+    parser.add_argument("--issue", help="Auto-detect coordinates: floating_shelf, wall_cabinet_1300, base_cabinet, trash_cabinet")
+    parser.add_argument("--pad", type=int, default=50, help="Padding around found text (pts)")
     args = parser.parse_args()
 
     pages = [int(p.strip()) for p in args.pages.split(",")]
-    x1, y1, x2, y2 = [float(x) for x in args.lasso.split(",")]
-    lasso = fitz.Rect(x1, y1, x2, y2)
+
+    # Determine lasso rect: manual coords override auto-detect
+    if args.lasso:
+        x1, y1, x2, y2 = [float(x) for x in args.lasso.split(",")]
+        lasso = fitz.Rect(x1, y1, x2, y2)
+        print(f"Using manual lasso: {x1:.0f},{y1:.0f},{x2:.0f},{y2:.0f}")
+    elif args.issue:
+        # Auto-detect coordinates from PDF text
+        ISSUE_COORDS = {
+            "floating_shelf":    {"page": 3, "search": "F6",   "pad": 70},
+            "wall_cabinet_1300": {"page": 3, "search": '34"',  "pad": 80},
+            "base_cabinet":      {"page": 0, "search": '34"',  "pad": 60},
+            "trash_cabinet":     {"page": 0, "search": "T",    "pad": 40},
+        }
+        rule = ISSUE_COORDS.get(args.issue)
+        if not rule:
+            print(f"Unknown issue: {args.issue}")
+            print(f"Available: {list(ISSUE_COORDS.keys())}")
+            exit(1)
+
+        src_auto = fitz.open(args.input)
+        page = src_auto[rule["page"]]
+        pad = args.pad if args.pad != 50 else rule["pad"]
+        hits = page.search_for(rule["search"])
+        if not hits:
+            print(f"WARNING: '{rule['search']}' not found on page {rule['page']} — cannot auto-locate")
+            print("Use --lasso x1,y1,x2,y2 to specify coordinates manually")
+            src_auto.close()
+            exit(1)
+        rect = hits[0]
+        lasso = fitz.Rect(
+            rect.x0 - pad, rect.y0 - pad,
+            rect.x1 + pad, rect.y1 + pad
+        )
+        print(f"Auto-detected '{rule['search']}' on page {rule['page']}: {lasso.x0:.0f},{lasso.y0:.0f},{lasso.x1:.0f},{lasso.y1:.0f}")
+        src_auto.close()
+        # Override pages list to only annotate the detected page
+        pages = [rule["page"]]
+    else:
+        print("Error: must provide --lasso or --issue")
+        exit(1)
 
     src = fitz.open(args.input)
     doc = fitz.open()
