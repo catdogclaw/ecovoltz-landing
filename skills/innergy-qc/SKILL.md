@@ -154,8 +154,8 @@ Example checklist entry:
 **Context check:** If >70% full, compact before proceeding.
 
 **⏸️ Gate:**
-- **[C] Continue** → Check context → Proceed to Step 4. Ensure `drawing_requirements_checklist.md` is saved to `002_*_analysis/` — it feeds into Step 6 completeness check.
-- **[R] Show Results** → Show original page count vs. extracted count, list included pages + any millwork notes found
+- **[C] Continue** → Verify both TEXT and VISION sources were used for the checklist. Ensure `drawing_requirements_checklist.md` is saved to `002_*_analysis/` with [TEXT] and [VISION] tags per entry. Proceed to Step 4.
+- **[R] Show Results** → Show original page count vs. extracted count, list included pages + millwork notes found (both sources)
 - **[S] Stop** → Save state, end analysis
 
 ---
@@ -359,8 +359,8 @@ Save to `completeness_report.md`.
 **Context check:** If >70% full, compact before proceeding.
 
 **⏸️ Gate:**
-- **[C] Continue** → Verify `drawing_requirements_checklist.md` has been reviewed against INNERGY scope. Every item in the checklist must have a ✅ or ❌ status. Proceed to Step 7.
-- **[R] Show Results** → Display all completeness issues found + checklist review status
+- **[C] Continue** → Verify both TEXT and VISION entries in `drawing_requirements_checklist.md` have been reviewed against INNERGY scope. Every [TEXT] and [VISION] item must have a ✅, ❌, or ❓ status. Proceed to Step 7.
+- **[R] Show Results** → Display all completeness issues found + checklist review status (per source)
 - **[S] Stop** → Save state, end analysis
 
 ---
