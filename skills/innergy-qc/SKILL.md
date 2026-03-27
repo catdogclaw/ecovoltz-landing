@@ -68,22 +68,23 @@ Save findings to `scratch/file_audit.md`.
 - Maximum file size ~30MB per upload
 - If PDF exceeds either limit: split before upload, run on each part, combine results
 
-**Files:**
-- Compressed PDF (50 DPI JPEG, ~20MB) — for upload to Claude
-- `prompts/page_identification.md` — prompt for page identification
-
 **Action:**
 1. Check: if compressed PDF >100 pages OR >30MB → split into parts
-2. Upload to Claude (claude.ai)
-3. Paste `prompts/page_identification.md` as the prompt
-4. Claude outputs a list of millwork-relevant page numbers with reasons
-5. Save Claude's output as `llm_page_results.md`
+2. Create per-part prompt file in `002_LLM_analysis/` for each PDF part:
+   - PART1 → `page_identification_PART1.md` with output `llm_results_PART1.md`
+   - PART2 → `page_identification_PART2.md` with output `llm_results_PART2.md`
+   - (same pattern for additional parts)
+   - Each prompt must end with: "Save your complete findings as an MD file with this exact filename: llm_results_PART[N].md"
+3. Attach the PDF part and its prompt file to Claude
+4. Claude executes autonomously and saves the output file automatically
+5. Download the saved file from Claude's workspace
+6. Move to `002_LLM_analysis/llm_results_PART[N].md`
+7. Repeat for all parts
+8. Combine all results into `llm_page_results.md`
 
-**Claude page ID prompt is in:** `prompts/page_identification.md`
+**Output:** `llm_page_results.md` — combined list of millwork-relevant page numbers
 
-**If >100 pages or >30MB:** Split compressed PDF into parts before upload. Run on each part. Combine page lists into `llm_page_results.md`.
-
-**Output:** `llm_page_results.md` — list of millwork-relevant page numbers
+**⏸️ Gate:** After Step 2 — you have page numbers. Proceed to Step 3 (extract). Do NOT create detailed analysis prompt until after Step 3.
 
 ---
 
@@ -116,27 +117,21 @@ out.save('full_resolution_pages.pdf')
 
 ### Step 4 — LLM Detailed Analysis
 
-**Purpose:** Claude produces an exhaustive per-page inventory of material codes, cabinet counts, construction notes, and gaps.
+**Purpose:** Claude produces an exhaustive per-page inventory of material codes, cabinet counts, construction notes, and gaps. Only create the detailed analysis prompt AFTER getting page ID results and extracting full-res pages.
 
 **Claude Constraints:**
 - Maximum 100 pages per upload
 - Maximum file size ~30MB per upload
 - If `full_resolution_pages.pdf` exceeds either limit: split into parts, upload separately, combine results
 
-**Files:**
-- `full_resolution_pages.pdf` (full resolution)
-- `prompts/detailed_analysis.md` — detailed analysis prompt
-
 **Action:**
 1. Check size: if `full_resolution_pages.pdf` >100 pages OR >30MB → split into parts
-2. Upload to Claude (claude.ai)
-3. Paste `prompts/detailed_analysis.md` as the prompt
-4. Claude outputs exhaustive per-page analysis
-5. Save as `llm_detailed_results.md`
+2. Create `detailed_analysis.md` prompt in `002_LLM_analysis/` — tailor it based on the actual pages found (e.g., note which sheet numbers/types appear). Include this instruction at the end: "Save your complete findings as an MD file with this exact filename: llm_detailed_results.md"
+3. Attach `full_resolution_pages.pdf` and `detailed_analysis.md` to Claude
+4. Claude executes autonomously and saves as `llm_detailed_results.md`
+5. Download and move to `002_LLM_analysis/`
 
-**Claude detailed analysis prompt is in:** `prompts/detailed_analysis.md`
-
-**If split needed:** Run on each part, save each result as `llm_detailed_results_PART1.md`, `llm_detailed_results_PART2.md`, etc. Combine into `llm_detailed_results.md` when all parts are done.
+**If split needed:** Run on each part, save each result as `llm_detailed_results_PART1.md`, etc. Combine into `llm_detailed_results.md` when all parts are done.
 
 **Output:** `llm_detailed_results.md` — exhaustive per-page analysis
 
@@ -382,12 +377,20 @@ python3 scripts/find_annotation_coords.py \
       scope_of_work.pdf
       [other customer supplied files]
     002_LLM_analysis/
-      compressed.pdf                    # Compressed for LLM upload
-      prompt_page_id.md               # LLM page ID prompt
-      llm_page_results.md             # LLM page identification output
-      full_resolution_pages.pdf        # Full-res extracted pages
-      prompt_detailed_analysis.md     # LLM detailed analysis prompt
-      llm_detailed_results.md         # LLM detailed analysis output
+      compressed_PART1.pdf            # Compressed PDF parts (for Claude)
+      compressed_PART2.pdf
+      compressed_PART3.pdf
+      compressed_PART4.pdf
+      page_identification_PART1.md   # Per-part page ID prompts (create per project)
+      page_identification_PART2.md
+      ...
+      llm_results_PART1.md            # Claude outputs (download from Claude)
+      llm_results_PART2.md
+      ...
+      llm_page_results.md             # Combined page ID results
+      full_resolution_pages.pdf        # Full-res extracted pages (after Step 3)
+      detailed_analysis.md            # Detailed analysis prompt (create after Step 2)
+      llm_detailed_results.md         # Claude detailed output
     003_extract/
       innergy_qc.xlsx                 # INNERGY extracted line items
       scope_summary.md                # Scope extraction output
@@ -400,6 +403,8 @@ python3 scripts/find_annotation_coords.py \
       ESTIMATE_REVIEW_[Project]_[date].md  # Executive summary
       DISCREPANCY_REVIEW_[Project]_[issue].pdf  # Annotated PDFs
 ```
+
+**Rule: Create files when you need them, not before.** Detailed analysis prompt → after Step 2. Extraction → after getting page numbers. Never create output files before the triggering input exists.
 
 ---
 
