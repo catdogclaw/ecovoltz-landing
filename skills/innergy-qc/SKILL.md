@@ -220,9 +220,54 @@ python3 scripts/completeness_check.py \
 Save to `completeness_report.md`.
 
 **⏸️ Gate:**
-- **[C] Continue** → Proceed to Step 7
+- **[C] Continue** → Proceed to Step 6D (Scoring)
 - **[R] Show Results** → Display completeness issues
 - **[S] Stop** → Save state, end analysis
+
+---
+
+### Step 6D — QC Scoring
+
+**Purpose:** Score the completed QC run against the rubric to track skill improvement over time. Target: 95%+ three times in a row before a skill version is "locked."
+
+**Autoresearch rule:** Each time you run a QC job, increment the round number. Track: Round N → Score X% → what changed.
+
+**Action:**
+```bash
+python3 scripts/score_qc_run.py \
+  --completeness "004_comparison/completeness_report.md" \
+  --xlsx "003_extract/innergy_qc.xlsx" \
+  --output "004_comparison/qc_score.md" \
+  --round N
+```
+
+**Scoring rubric (100 points total):**
+
+| Section | Check | Points |
+|---------|-------|--------|
+| A1 | Cabinet X dimensions match INNERGY within 0.5" | 10 |
+| A2 | Cabinet Y (height) dimensions match INNERGY within 0.5" | 10 |
+| A3 | Cabinet Z (depth) dimensions match INNERGY within 0.5" | 10 |
+| A4 | No systematic height discrepancies > 1" | 10 |
+| B1 | No missing cabinets — every drawing cabinet has INNERGY item | 10 |
+| B2 | No extra items — every INNERGY item has drawing evidence | 10 |
+| B3 | No mislabeled items (countertops as floating shelves, etc.) | 10 |
+| C1 | All PL-/SS-/WD-/AT- material codes matched | 10 |
+| C2 | Finish schedule aligned | 10 |
+| D1 | Cabinet counts match per suite | 5 |
+| D2 | QTY field matches drawing count | 5 |
+
+**Grade thresholds:**
+- 95–100%: 🟢 Excellent
+- 85–94%: 🟡 Good
+- 70–84%: 🟠 Needs Work
+- <70%: 🔴 Poor
+
+**Output:** `qc_score.md` — scored report with failed items and autoresearch log entry
+
+**⏸️ Gate:**
+- **[C] Continue** → Proceed to Step 7
+- **[R] Show Results** → Display score and failed items
 
 ---
 
@@ -340,6 +385,16 @@ python3 scripts/annotate_pdf.py \
   --discrepancy "Line 1|Line 2|Action" \
   --title "Title" \
   --issue floating_shelf
+```
+
+### scripts/score_qc_run.py
+Scores a completed QC run against the rubric. Produces a standardized score report with failed items and autoresearch log entry.
+```
+python3 scripts/score_qc_run.py \
+  --completeness path/to/completeness_report.md \
+  --xlsx path/to/innergy_qc.xlsx \
+  --output path/to/qc_score.md \
+  --round N
 ```
 
 ### scripts/find_annotation_coords.py
